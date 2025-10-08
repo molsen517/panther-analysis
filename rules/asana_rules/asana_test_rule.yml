@@ -1,0 +1,200 @@
+AnalysisType: rule
+Description: Detects suspicious user activity patterns in Asana that could indicate account compromise or unauthorized access. This rule triggers when users perform high-privilege actions with suspicious characteristics such as test accounts, unusual IP addresses, or specific event patterns.
+DisplayName: "Asana Suspicious User Activity Detected"
+Enabled: true
+Filename: asana_test_rule.py
+Runbook: |
+  This rule detects potentially suspicious activity in Asana that could indicate:
+  1. Account compromise or unauthorized access
+  2. Test accounts performing production actions
+  3. High-privilege actions from unusual locations
+  4. Suspicious naming patterns in service accounts or teams
+  
+  Investigation steps:
+  1. Verify the actor's identity and authorization
+  2. Check if the activity was intentional and authorized
+  3. Review recent login patterns for the actor
+  4. Confirm the resource names and settings are legitimate
+  5. If suspicious, consider disabling the account and investigating further
+Reference: https://help.asana.com/hc/en-us/articles/14211433439387-Team-permissions
+Severity: Medium
+Tests:
+  # Test 1: Suspicious actor email with "test" pattern
+  - ExpectedResult: true
+    Log:
+      actor:
+        actor_type: user
+        email: test.user@example.com
+        gid: "12345"
+        name: Test User
+      context:
+        client_ip_address: 192.168.1.100
+        context_type: web
+        user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+      created_at: "2023-01-15 14:30:26.15"
+      details:
+        new_value: public
+      event_category: access_control
+      event_type: team_privacy_settings_changed
+      gid: "12345"
+      resource:
+        gid: "12345"
+        name: Marketing Team
+        resource_type: team
+      p_log_type: Asana.Audit
+    Name: "Test user making team public"
+
+  # Test 2: Service account with suspicious name
+  - ExpectedResult: true
+    Log:
+      actor:
+        actor_type: user
+        email: admin@company.com
+        gid: "67890"
+        name: Admin User
+      context:
+        client_ip_address: 10.0.0.50
+        context_type: web
+        user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+      created_at: "2023-01-15 15:45:18.396"
+      details: {}
+      event_category: apps
+      event_type: service_account_created
+      gid: "67890"
+      resource:
+        gid: "67890"
+        name: Emergency Backup Account
+        resource_type: user
+      p_log_type: Asana.Audit
+    Name: "Suspicious service account creation"
+
+  # Test 3: Admin role change from private IP
+  - ExpectedResult: true
+    Log:
+      actor:
+        actor_type: user
+        email: manager@company.com
+        gid: "11111"
+        name: Manager User
+      context:
+        client_ip_address: 172.16.0.25
+        context_type: web
+        user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+      created_at: "2023-01-15 16:20:45.123"
+      details:
+        new_value: admin
+      event_category: access_control
+      event_type: user_workspace_admin_role_changed
+      gid: "11111"
+      resource:
+        gid: "11111"
+        name: John Doe
+        resource_type: user
+      p_log_type: Asana.Audit
+    Name: "Admin role change from private IP"
+
+  # Test 4: Normal user login (should not trigger)
+  - ExpectedResult: false
+    Log:
+      actor:
+        actor_type: user
+        email: normal.user@company.com
+        gid: "22222"
+        name: Normal User
+      context:
+        client_ip_address: 203.0.113.45
+        context_type: web
+        user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+      created_at: "2023-01-15 17:10:30.456"
+      details:
+        method:
+          - SAML
+      event_category: logins
+      event_type: user_login_succeeded
+      gid: "22222"
+      resource:
+        email: normal.user@company.com
+        gid: "22222"
+        name: Normal User
+        resource_type: user
+      p_log_type: Asana.Audit
+    Name: "Normal user login"
+
+  # Test 5: Regular team creation (should not trigger)
+  - ExpectedResult: false
+    Log:
+      actor:
+        actor_type: user
+        email: project.manager@company.com
+        gid: "33333"
+        name: Project Manager
+      context:
+        client_ip_address: 203.0.113.100
+        context_type: web
+        user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+      created_at: "2023-01-15 18:00:15.789"
+      details: {}
+      event_category: teams
+      event_type: team_created
+      gid: "33333"
+      resource:
+        gid: "33333"
+        name: Q1 Planning Team
+        resource_type: team
+      p_log_type: Asana.Audit
+    Name: "Regular team creation"
+
+  # Test 6: User with "temp" in name performing high-privilege action
+  - ExpectedResult: true
+    Log:
+      actor:
+        actor_type: user
+        email: temp.worker@company.com
+        gid: "44444"
+        name: Temp Worker
+      context:
+        client_ip_address: 198.51.100.25
+        context_type: web
+        user_agent: Mozilla/5.0 (Linux x86_64) AppleWebKit/537.36
+      created_at: "2023-01-15 19:15:22.012"
+      details:
+        new_value: example.com
+      event_category: admin_settings
+      event_type: workspace_associated_email_domain_added
+      gid: "44444"
+      resource:
+        gid: "44444"
+        name: Company Workspace
+        resource_type: workspace
+      p_log_type: Asana.Audit
+    Name: "Temp user adding email domain"
+
+  # Test 7: Bot account creating service account
+  - ExpectedResult: true
+    Log:
+      actor:
+        actor_type: user
+        email: automation.bot@company.com
+        gid: "55555"
+        name: Automation Bot
+      context:
+        client_ip_address: 192.0.2.100
+        context_type: api
+        user_agent: AsanaAPI/1.0
+      created_at: "2023-01-15 20:30:45.345"
+      details: {}
+      event_category: apps
+      event_type: service_account_created
+      gid: "55555"
+      resource:
+        gid: "55555"
+        name: Integration Service Account
+        resource_type: user
+      p_log_type: Asana.Audit
+    Name: "Bot creating service account"
+
+DedupPeriodMinutes: 60
+LogTypes:
+  - Asana.Audit
+RuleID: "Asana.Suspicious.User.Activity"
+Threshold: 1
