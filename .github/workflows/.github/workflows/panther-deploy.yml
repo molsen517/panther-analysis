@@ -3,41 +3,43 @@ name: Panther Deploy Workflow
 on:
   push:
     branches:
-      - develop # Only run the deployment on pushes to the develop branch
-  workflow_dispatch: # Allows you to manually trigger the workflow from the GitHub Actions tab
+      - main # Triggers deployment on pushes to the production branch
+  workflow_dispatch: # Allows manual triggering from the Actions tab in GitHub
 
 jobs:
   validate_and_deploy:
     runs-on: ubuntu-latest
+    
+    # Define environment variables to be injected into the job environment
+    env:
+      PANTHER_API_TOKEN: ${{ secrets.PANTHER_API_TOKEN }}
+      PANTHER_API_HOST: ${{ secrets.PANTHER_API_HOST }}
+
     steps:
       - name: Checkout Repository
+        # Downloads the code from your GitHub repo to the runner VM
         uses: actions/checkout@v4
 
       - name: Set up Python Environment
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Use a standard Python version
+          python-version: '3.11' # Essential for PAT compatibility
 
       - name: Install Panther Analysis Tool (PAT)
-        # PAT is the CLI tool that handles testing and uploading detections
+        # Installs the Panther CLI tool
         run: pip install panther_analysis_tool
 
       # ------------------------------------
-      # CI PHASE: Test Detections Locally
+      # CI PHASE: Test Detections
       # ------------------------------------
       - name: Run Unit Tests on Detections
-        # Runs tests defined in your local detection files
+        # Executes all tests locally to validate detection logic before upload
         run: panther_analysis_tool test --path .
         
       # ------------------------------------
       # CD PHASE: Upload to Panther Instance
       # ------------------------------------
       - name: Upload Detections to Panther
-        # This step uses the SECRETS you stored in GitHub Settings
-        env:
-          # Injecting the secrets as environment variables for PAT to use
-          PANTHER_API_TOKEN: ${{ secrets.PANTHER_API_TOKEN }}
-          PANTHER_API_HOST: ${{ secrets.PANTHER_API_HOST }}
-        run: panther_analysis_tool upload --path . 
-        # PAT automatically reads the PANTHER_API_TOKEN and PANTHER_API_HOST
-        # from the environment variables to authenticate the upload.
+        # Deploys the content to the instance using the injected secrets for authentication
+        # PAT automatically uses PANTHER_API_TOKEN and PANTHER_API_HOST from the environment
+        run: panther_analysis_tool upload --path .
