@@ -1,0 +1,90 @@
+AnalysisType: rule
+RuleID: "Insider.AWS.S3.BulkDataAccess.Staging"
+DisplayName: "AWS - S3 Bulk GetObject Data Staging"
+Filename: aws_s3_bulk_getobject.py
+Enabled: true
+Severity: High
+LogTypes:
+  - AWS.CloudTrail
+Tags:
+  - insider-threat
+  - data-staging
+  - exfiltration
+  - ATT&CK:T1530
+  - ATT&CK:T1074.002
+  - Detection.POC
+Reports:
+  MITRE ATT&CK:
+    - TA0009:T1530
+    - TA0009:T1074.002
+DedupPeriodMinutes: 10
+Threshold: 50
+Description: >
+  Detects bulk S3 GetObject calls — 50+ downloads in a 10-minute window
+  from a single IAM principal. Indicative of data staging prior to
+  exfiltration. High-value signal when the same principal subsequently
+  performs cross-account PutObject or uploads to an external destination.
+Runbook: >
+  1. Identify the IAM principal (userIdentity.arn) making bulk downloads.
+  2. List all buckets and objects accessed in the same window.
+  3. Calculate total bytes downloaded if CloudTrail data events enabled.
+  4. Check if the same principal subsequently performed PutObject to
+     a different account — look for Insider.AWS.S3.CrossAccount.Exfil.
+  5. Check if this principal's credentials were recently created or rotated.
+  6. Correlate with Entra ID for the same user — off-hours login signal.
+Tests:
+  - Name: S3 GetObject bulk download
+    ExpectedResult: true
+    Log:
+      {
+        "eventVersion": "1.08",
+        "eventTime": "2026-05-22T02:45:00Z",
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "GetObject",
+        "eventType": "AwsApiCall",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "185.220.101.47",
+        "userAgent": "aws-cli/2.13.0",
+        "requestParameters": {
+          "bucketName": "corp-financial-records-prod",
+          "key": "2024/Q4/financial_summary.xlsx"
+        },
+        "responseElements": null,
+        "userIdentity": {
+          "type": "IAMUser",
+          "principalId": "AIDAEXAMPLEID",
+          "arn": "arn:aws:iam::123456789012:user/contractor-jsmith",
+          "accountId": "123456789012",
+          "userName": "contractor-jsmith"
+        },
+        "eventID": "evt-s3-getobj-001",
+        "requestID": "req-s3-001",
+        "recipientAccountId": "123456789012",
+        "readOnly": true,
+        "managementEvent": false
+      }
+  - Name: Non-GetObject event - should not fire
+    ExpectedResult: false
+    Log:
+      {
+        "eventVersion": "1.08",
+        "eventTime": "2026-05-22T14:00:00Z",
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "ListBucket",
+        "eventType": "AwsApiCall",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "10.0.1.50",
+        "userAgent": "aws-cli/2.13.0",
+        "requestParameters": {
+          "bucketName": "corp-financial-records-prod"
+        },
+        "userIdentity": {
+          "type": "IAMUser",
+          "arn": "arn:aws:iam::123456789012:user/admin-bob",
+          "accountId": "123456789012",
+          "userName": "admin-bob"
+        },
+        "eventID": "evt-s3-list-001",
+        "requestID": "req-s3-002",
+        "recipientAccountId": "123456789012"
+      }

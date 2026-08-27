@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Panther_Demo_Alert_Review_Guide</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css" />
+</head>
+<body>
+<h1
+id="panther-demo-compromised-root-credentials-attack-scenario">Panther
+Demo: Compromised Root Credentials Attack Scenario</h1>
+<h2
+id="recommended-alert-review-order-for-customer-demonstrations">Recommended
+Alert Review Order for Customer Demonstrations</h2>
+<hr />
+<h2 id="attack-overview">🎯 <strong>Attack Overview</strong></h2>
+<p><strong>Scenario</strong>: Compromised AWS Root Credentials
+Attack<br />
+<strong>Timeline</strong>: September 15, 2025<br />
+<strong>Duration</strong>: 5-day attack progression<br />
+<strong>Impact</strong>: Data exfiltration, privilege escalation,
+persistent access</p>
+<hr />
+<h2 id="demo-script-recommended-alert-review-order">📋 <strong>Demo
+Script: Recommended Alert Review Order</strong></h2>
+<h3 id="phase-1-set-the-context-5-minutes"><strong>Phase 1: Set the
+Context (5 minutes)</strong></h3>
+<blockquote>
+<p><em>“Let me show you how Panther detected a sophisticated attack that
+unfolded over several days in September 2025.”</em></p>
+</blockquote>
+<h4 id="start-with-the-victim-baseline"><strong>1. Start with the Victim
+Baseline</strong></h4>
+<p><strong>Alert</strong>:
+<code>AWS.CloudTrail.NormalConsoleActivity</code> or
+<code>Okta.SystemLog.SuccessfulLogin</code> - <strong>Purpose</strong>:
+Establish normal user behavior - <strong>Key Points</strong>: - Show
+legitimate user (Tracey Stone) logging in from San Francisco -
+Demonstrate normal AWS console activity - Set baseline for
+comparison</p>
+<p><strong>Demo Script</strong>: &gt; <em>“Here we see normal,
+legitimate activity from our employee Tracey Stone logging into AWS from
+San Francisco. This establishes our baseline of normal
+behavior.”</em></p>
+<hr />
+<h3 id="phase-2-show-the-reconnaissance-3-minutes"><strong>Phase 2: Show
+the Reconnaissance (3 minutes)</strong></h3>
+<blockquote>
+<p><em>“Now let’s see how the attacker began their
+reconnaissance.”</em></p>
+</blockquote>
+<h4 id="failed-login-attempts"><strong>2. Failed Login
+Attempts</strong></h4>
+<p><strong>Alert</strong>:
+<code>Okta.SystemLog.MultipleFailedLogins</code> or
+<code>Okta.SystemLog.SuspiciousLoginLocation</code> -
+<strong>Purpose</strong>: Show attacker reconnaissance - <strong>Key
+Points</strong>: - Multiple failed login attempts from Romania
+(92.55.146.245) - Attempting to use similar username (tracy_stone vs
+tracey_stone) - Geographic anomaly detection</p>
+<p><strong>Demo Script</strong>: &gt; <em>“Here’s where the attack
+begins. We see multiple failed login attempts from Romania, trying to
+use a username very similar to our legitimate employee. This is classic
+reconnaissance behavior.”</em></p>
+<hr />
+<h3 id="phase-3-the-compromise-5-minutes"><strong>Phase 3: The
+Compromise (5 minutes)</strong></h3>
+<blockquote>
+<p><em>“The attacker eventually succeeded in compromising our AWS root
+credentials.”</em></p>
+</blockquote>
+<h4 id="successful-compromise"><strong>3. Successful
+Compromise</strong></h4>
+<p><strong>Alert</strong>: <code>AWS.CloudTrail.RootAccountUsage</code>
+or <code>AWS.CloudTrail.SuspiciousConsoleLogin</code> -
+<strong>Purpose</strong>: Show the moment of compromise - <strong>Key
+Points</strong>: - Successful login from attacker IP (92.55.146.245) -
+Root account usage (high privilege) - Geographic anomaly (Romania vs San
+Francisco)</p>
+<p><strong>Demo Script</strong>: &gt; <em>“This is the critical moment -
+the attacker successfully logged into our AWS root account from Romania.
+Notice the geographic anomaly and the use of root credentials.”</em></p>
+<hr />
+<h3
+id="phase-4-privilege-escalation-persistence-7-minutes"><strong>Phase 4:
+Privilege Escalation &amp; Persistence (7 minutes)</strong></h3>
+<blockquote>
+<p><em>“Once inside, the attacker immediately began establishing
+persistence and escalating privileges.”</em></p>
+</blockquote>
+<h4 id="privilege-escalation"><strong>4. Privilege
+Escalation</strong></h4>
+<p><strong>Alert</strong>:
+<code>AWS.CloudTrail.PrivilegeEscalation</code> or
+<code>AWS.CloudTrail.SuspiciousAPI</code> - <strong>Purpose</strong>:
+Show attacker establishing persistence - <strong>Key Points</strong>: -
+Creating new IAM user (tracy_stone) - Attaching multiple high-privilege
+policies - Creating access keys for persistence - Attempting to stop
+CloudTrail logging</p>
+<p><strong>Demo Script</strong>: &gt; <em>“The attacker immediately
+began privilege escalation. They created a new IAM user, attached
+multiple high-privilege policies including EC2, S3, and IAM full access,
+and created access keys for persistent access. They also tried to stop
+CloudTrail logging to hide their tracks.”</em></p>
+<hr />
+<h3 id="phase-5-infrastructure-abuse-5-minutes"><strong>Phase 5:
+Infrastructure Abuse (5 minutes)</strong></h3>
+<blockquote>
+<p><em>“The attacker then spun up infrastructure to support their
+attack.”</em></p>
+</blockquote>
+<h4 id="resource-creation"><strong>5. Resource Creation</strong></h4>
+<p><strong>Alert</strong>:
+<code>AWS.CloudTrail.UnusualServiceUsage</code> or
+<code>AWS.CloudTrail.EC2InstanceCreation</code> -
+<strong>Purpose</strong>: Show attacker creating attack infrastructure -
+<strong>Key Points</strong>: - Launching expensive EC2 instances
+(p2.8xlarge) - Using compromised access keys - Establishing attack
+infrastructure</p>
+<p><strong>Demo Script</strong>: &gt; <em>“The attacker launched
+expensive EC2 instances using the compromised credentials. This shows
+they’re establishing infrastructure for their attack
+operations.”</em></p>
+<hr />
+<h3 id="phase-6-data-exfiltration-5-minutes"><strong>Phase 6: Data
+Exfiltration (5 minutes)</strong></h3>
+<blockquote>
+<p><em>“Now let’s see the data theft in action.”</em></p>
+</blockquote>
+<h4 id="data-exfiltration"><strong>6. Data Exfiltration</strong></h4>
+<p><strong>Alert</strong>:
+<code>AWS.S3ServerAccess.LargeDataDownload</code> or
+<code>AWS.S3ServerAccess.SuspiciousAccessPattern</code> -
+<strong>Purpose</strong>: Show data theft - <strong>Key Points</strong>:
+- Accessing customer data bucket (acme.customerdata-prod) - Downloading
+multiple PDF files (id-01.pdf, id-02.pdf, id-03.pdf) - Large data
+transfers</p>
+<p><strong>Demo Script</strong>: &gt; <em>“Here’s the data exfiltration.
+The attacker accessed our customer data bucket and downloaded multiple
+PDF files containing sensitive customer information. This represents the
+actual data theft.”</em></p>
+<hr />
+<h3 id="phase-7-network-activity-c2-5-minutes"><strong>Phase 7: Network
+Activity &amp; C2 (5 minutes)</strong></h3>
+<blockquote>
+<p><em>“Finally, let’s see the network communication and command &amp;
+control activity.”</em></p>
+</blockquote>
+<h4 id="command-control-communication"><strong>7. Command &amp; Control
+Communication</strong></h4>
+<p><strong>Alert</strong>:
+<code>AWS.VPCFlow.SuspiciousOutboundTraffic</code> or
+<code>AWS.VPCFlow.C2Communication</code> - <strong>Purpose</strong>:
+Show C2 and data exfiltration over network - <strong>Key
+Points</strong>: - SSH connections to external IP (92.55.146.245:22) -
+Large data transfers to external IPs - S3 data transfer patterns -
+Network-based evidence of compromise</p>
+<p><strong>Demo Script</strong>: &gt; <em>“The network logs show the
+complete picture. We see SSH connections to the attacker’s command &amp;
+control server, large data transfers, and the network evidence of data
+exfiltration. This completes the attack chain.”</em></p>
+<hr />
+<h2 id="complete-attack-story-narrative">🎭 <strong>Complete Attack
+Story Narrative</strong></h2>
+<blockquote>
+<p><strong>“The Compromised Root Credentials Attack”</strong></p>
+<ol type="1">
+<li><strong>Reconnaissance</strong> (Sept 10-11): Attacker attempts
+multiple failed logins from Romania</li>
+<li><strong>Compromise</strong> (Sept 15): Attacker successfully logs
+into AWS root account</li>
+<li><strong>Privilege Escalation</strong> (Sept 15): Creates persistent
+access and high-privilege user</li>
+<li><strong>Infrastructure Abuse</strong> (Sept 15): Launches expensive
+EC2 instances for attack operations</li>
+<li><strong>Data Exfiltration</strong> (Sept 15): Downloads customer
+data from S3 buckets</li>
+<li><strong>C2 Communication</strong> (Sept 15): Establishes command
+&amp; control and transfers stolen data</li>
+</ol>
+</blockquote>
+<hr />
+<h2 id="demo-timing-flow">📊 <strong>Demo Timing &amp;
+Flow</strong></h2>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 21%" />
+<col style="width: 26%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Phase</strong></th>
+<th><strong>Duration</strong></th>
+<th><strong>Key Message</strong></th>
+<th><strong>Customer Takeaway</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Context</strong></td>
+<td>5 min</td>
+<td>Normal baseline activity</td>
+<td>Panther establishes baselines</td>
+</tr>
+<tr>
+<td><strong>Reconnaissance</strong></td>
+<td>3 min</td>
+<td>Early threat detection</td>
+<td>Panther detects reconnaissance</td>
+</tr>
+<tr>
+<td><strong>Compromise</strong></td>
+<td>5 min</td>
+<td>Critical security event</td>
+<td>Panther alerts on compromise</td>
+</tr>
+<tr>
+<td><strong>Privilege Escalation</strong></td>
+<td>7 min</td>
+<td>Attack progression</td>
+<td>Panther tracks attack evolution</td>
+</tr>
+<tr>
+<td><strong>Infrastructure Abuse</strong></td>
+<td>5 min</td>
+<td>Resource abuse detection</td>
+<td>Panther detects resource misuse</td>
+</tr>
+<tr>
+<td><strong>Data Exfiltration</strong></td>
+<td>5 min</td>
+<td>Data theft evidence</td>
+<td>Panther shows data loss</td>
+</tr>
+<tr>
+<td><strong>Network Activity</strong></td>
+<td>5 min</td>
+<td>Complete attack picture</td>
+<td>Panther provides full context</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Demo Time</strong>: ~35 minutes</p>
+<hr />
+<h2 id="key-demo-messages">🎯 <strong>Key Demo Messages</strong></h2>
+<h3 id="comprehensive-coverage"><strong>1. Comprehensive
+Coverage</strong></h3>
+<blockquote>
+<p><em>“Panther detected this attack across multiple data sources -
+Okta, CloudTrail, S3, and VPC Flow logs - providing complete
+visibility.”</em></p>
+</blockquote>
+<h3 id="timeline-correlation"><strong>2. Timeline
+Correlation</strong></h3>
+<blockquote>
+<p><em>“Notice how Panther correlated events across the 5-day timeline,
+showing the complete attack progression from reconnaissance to data
+exfiltration.”</em></p>
+</blockquote>
+<h3 id="real-time-detection"><strong>3. Real-time
+Detection</strong></h3>
+<blockquote>
+<p><em>“Each of these alerts fired in real-time as the attack unfolded,
+allowing for immediate response.”</em></p>
+</blockquote>
+<h3 id="cross-service-correlation"><strong>4. Cross-Service
+Correlation</strong></h3>
+<blockquote>
+<p><em>“Panther automatically correlated the Okta reconnaissance with
+the AWS compromise and subsequent activities.”</em></p>
+</blockquote>
+<hr />
+<h2 id="technical-setup-notes">🔧 <strong>Technical Setup
+Notes</strong></h2>
+<h3 id="prerequisites"><strong>Prerequisites</strong></h3>
+<ul>
+<li>All test data sent to Panther with September 2025 timestamps</li>
+<li>Okta logs via webhook</li>
+<li>AWS logs via S3 buckets</li>
+<li>Proper log source configuration</li>
+</ul>
+<h3 id="alert-configuration"><strong>Alert Configuration</strong></h3>
+<ul>
+<li>Ensure all relevant Panther rules are enabled</li>
+<li>Verify alert severity levels (Critical/High for key events)</li>
+<li>Check alert correlation settings</li>
+</ul>
+<h3 id="demo-environment"><strong>Demo Environment</strong></h3>
+<ul>
+<li>Use Panther’s alert timeline view</li>
+<li>Show alert details and raw log data</li>
+<li>Demonstrate alert investigation workflow</li>
+</ul>
+<hr />
+<h2 id="post-demo-discussion-points">📝 <strong>Post-Demo Discussion
+Points</strong></h2>
+<h3 id="response-capabilities"><strong>Response
+Capabilities</strong></h3>
+<ul>
+<li>How would you respond to each alert?</li>
+<li>What automated responses could be configured?</li>
+<li>How would you investigate further?</li>
+</ul>
+<h3 id="prevention-measures"><strong>Prevention Measures</strong></h3>
+<ul>
+<li>What controls could prevent this attack?</li>
+<li>How would MFA have helped?</li>
+<li>What monitoring improvements are needed?</li>
+</ul>
+<h3 id="business-impact"><strong>Business Impact</strong></h3>
+<ul>
+<li>What’s the business impact of this attack?</li>
+<li>How much data was potentially compromised?</li>
+<li>What are the compliance implications?</li>
+</ul>
+<hr />
+<p><em>This guide provides a structured approach to demonstrating
+Panther’s capabilities using the compromised root credentials attack
+scenario. The recommended order tells a compelling story while
+showcasing Panther’s comprehensive detection and correlation
+capabilities.</em></p>
+</body>
+</html>

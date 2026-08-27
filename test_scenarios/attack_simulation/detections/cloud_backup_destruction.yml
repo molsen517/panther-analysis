@@ -1,0 +1,88 @@
+AnalysisType: rule
+RuleID: "Cloud.AWS.BackupDestruction"
+DisplayName: "Cloud — AWS Backup and Recovery Destruction"
+Filename: cloud_backup_destruction.py
+Enabled: true
+Severity: High
+LogTypes:
+  - AWS.CloudTrail
+Tags:
+  - cloud
+  - aws
+  - ransomware-precursor
+  - impact
+  - ATT&CK:T1490
+Reports:
+  MITRE ATT&CK:
+    - TA0040:T1490
+DedupPeriodMinutes: 60
+Threshold: 1
+Description: >
+  Detects EC2 snapshot deletion, S3 versioning suspension, and RDS backup
+  deletion in AWS. Common final stage of ransomware precursor kill chains
+  — attacker removes recovery options before deploying ransomware.
+Runbook: >
+  1. Identify IAM principal from alert_context.principal_arn.
+  2. Check source_ip — external IP is critical.
+  3. Check mfa_used — no MFA on destructive action is high risk.
+  4. Enumerate all backups deleted in same window.
+  5. Immediately re-enable versioning or restore from cross-region backup.
+  6. Revoke IAM credentials used.
+Tests:
+  - Name: EC2 snapshot deleted
+    ExpectedResult: true
+    Log:
+      {
+        "eventName": "DeleteSnapshot",
+        "eventSource": "ec2.amazonaws.com",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "185.220.101.47",
+        "requestParameters": {
+          "snapshotId": "snap-0a1b2c3d4e5f67890"
+        },
+        "userIdentity": {
+          "type": "AssumedRole",
+          "arn": "arn:aws:sts::123456789012:assumed-role/EngineeringAdmin/session-1",
+          "accountId": "123456789012"
+        }
+      }
+  - Name: S3 versioning suspended
+    ExpectedResult: true
+    Log:
+      {
+        "eventName": "PutBucketVersioning",
+        "eventSource": "s3.amazonaws.com",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "185.220.101.47",
+        "requestParameters": {
+          "bucketName": "corp-backups-prod",
+          "VersioningConfiguration": {
+            "Status": "Suspended"
+          }
+        },
+        "userIdentity": {
+          "type": "AssumedRole",
+          "arn": "arn:aws:sts::123456789012:assumed-role/EngineeringAdmin/session-1",
+          "accountId": "123456789012"
+        }
+      }
+  - Name: S3 versioning enabled - should not fire
+    ExpectedResult: false
+    Log:
+      {
+        "eventName": "PutBucketVersioning",
+        "eventSource": "s3.amazonaws.com",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "10.0.1.50",
+        "requestParameters": {
+          "bucketName": "corp-backups-prod",
+          "VersioningConfiguration": {
+            "Status": "Enabled"
+          }
+        },
+        "userIdentity": {
+          "type": "IAMUser",
+          "arn": "arn:aws:iam::123456789012:user/admin",
+          "accountId": "123456789012"
+        }
+      }

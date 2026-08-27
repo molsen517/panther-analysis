@@ -1,0 +1,47 @@
+Logs:
+  - eventVersion: "1.08"
+    userIdentity:
+      type: IAMUser
+      principalId: AIDIOSFODNN7EXAMPLE001
+      arn: arn:aws:iam::123456789012:user/david.nguyen
+      accountId: "123456789012"
+      accessKeyId: AKIAIOSFODNN7EXAMPLEB
+      userName: david.nguyen
+      sessionContext:
+        sessionIssuer:
+          userName: david.nguyen
+    eventTime: "2026-04-15T03:22:00Z"
+    eventSource: iam.amazonaws.com
+    eventName: PutUserPolicy
+    awsRegion: us-east-1
+    sourceIPAddress: 103.12.196.55
+    userAgent: python-requests/2.28.0
+    requestParameters:
+      userName: david.nguyen
+      policyName: AWSCompromisedKeyQuarantineV2
+      policyDocument: >
+        {"Version":"2012-10-17","Statement":[{"Effect":"Deny","Action":"*","Resource":"*"}]}
+    responseElements: null
+    requestID: QUARANTINE-REQUEST-003
+    eventID: quarantine-event-id-003
+    readOnly: false
+    eventType: AwsApiCall
+    p_log_type: AWS.CloudTrail
+    p_event_time: "2026-04-15 03:22:00.000000000"
+    p_alert_severity: HIGH
+    p_enrichment:
+      ipinfo_location:
+        sourceIPAddress:
+          city: Singapore
+          country: SG
+          region: Central Singapore
+          lat: "1.2897"
+          lng: "103.8501"
+          timezone: Asia/Singapore
+      ipinfo_privacy:
+        sourceIPAddress:
+          vpn: true
+          hosting: true
+          proxy: false
+          tor: false
+          service: NordVPN

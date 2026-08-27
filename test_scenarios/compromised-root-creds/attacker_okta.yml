@@ -3,7 +3,7 @@ LogType: Okta.SystemLog
 Format: jsonl
 Logs:
   - uuid: 5f09746d-2213-11eb-ad64-a7e5a0a8ce4f
-    published: "2020-10-25T10:20:22.000Z"
+    published: "2025-09-10T10:20:22.000Z"
     eventType: user.session.start
     version: "0"
     severity: INFO
@@ -64,7 +64,7 @@ Logs:
       externalSessionId: unknown
     securityContext: ~
   - uuid: 5f09746d-2213-11eb-ad64-a7e5a0a8ce4f
-    published: "2020-10-26T12:23:51.650Z"
+    published: "2025-09-11T12:23:51.650Z"
     eventType: user.session.start
     version: "0"
     severity: INFO

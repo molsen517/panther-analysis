@@ -1,0 +1,36 @@
+actor:
+  alternateId: tracey.stone@company.com
+  displayName: Tracey Stone
+  id: 00utstone00000000001
+  type: User
+authenticationContext:
+  authenticationStep: 0
+  externalSessionId: stolen-session-id-tstone-001
+client:
+  device: Unknown
+  geographicalContext:
+    city: Bucharest
+    country: Romania
+    geolocation:
+      lat: 44.43
+      lon: 26.1
+    state: Ilfov
+  ipAddress: 5.2.75.233
+  userAgent:
+    browser: CHROME
+    os: Windows 10
+    rawUserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0
+      Safari/537.36
+debugContext:
+  debugData:
+    changedAttributes: IP_ADDRESS,DEVICE,GEO_LOCATION
+    riskLevel: HIGH
+displayMessage: Session context change detected - high risk
+eventType: user.session.context.change
+outcome:
+  result: SUCCESS
+p_log_type: Okta.SystemLog
+published: '2026-04-15T14:47:00.000Z'
+severity: HIGH
+uuid: abc12345-0002-0002-0002-abcdef654321
+version: '0'

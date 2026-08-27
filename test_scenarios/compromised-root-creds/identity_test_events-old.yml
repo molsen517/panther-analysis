@@ -1,0 +1,463 @@
+events:
+
+  # ═══════════════════════════════════════════════════════════════
+  #  IDENTITY DETECTION TEST EVENTS
+  #
+  #  Attack story: Account Takeover via Brute Force → Persistence
+  #
+  #  Shared indicators for Panther AI pivot:
+  #    Attacker IP  : 185.220.101.47
+  #    Target user  : contractor.jsmith@corp.beazley.com
+  #    Backdoor acct: svc.sync@corp.beazley.com
+  #
+  #  Detections fired:
+  #    Stage 1 → Identity.BruteForce.FailedLogins          (x11 events)
+  #    Stage 2 → Identity.OffHours.AnomalousLogin
+  #    Stage 2 → Identity.HighRisk.CountryLogin
+  #    Stage 3 → Identity.MFA.Reset
+  #    Stage 3 → Identity.PrivilegeEscalation.RoleAssigned
+  #    Stage 3 → Identity.AccountCreated
+  # ═══════════════════════════════════════════════════════════════
+
+  # ─────────────────────────────────────────────────────────────
+  #  STAGE 1 — Brute Force (11 events across 3 sources)
+  #  Fires: Identity.BruteForce.FailedLogins (threshold 10)
+  #  All from same IP → same dedup key → threshold fires
+  # ─────────────────────────────────────────────────────────────
+
+  - description: "Failed login attempt #1 — Okta brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.session.start
+      outcome:
+        result: FAILURE
+        reason: INVALID_CREDENTIALS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        displayName: James Smith (Contractor)
+        id: okta-user-contractor-001
+      client:
+        ipAddress: 185.220.101.47
+        geographicalContext:
+          country: RO
+          city: Bucharest
+      authenticationContext:
+        credentialType: PASSWORD
+      securityContext:
+        isp: Hetzner Online GmbH
+        isProxy: false
+      uuid: okta-brute-001
+      published: "2026-05-22T02:10:00Z"
+
+  - description: "Failed login attempt #2 — Okta brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.session.start
+      outcome:
+        result: FAILURE
+        reason: INVALID_CREDENTIALS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        id: okta-user-contractor-001
+      client:
+        ipAddress: 185.220.101.47
+        geographicalContext:
+          country: RO
+          city: Bucharest
+      authenticationContext:
+        credentialType: PASSWORD
+      uuid: okta-brute-002
+      published: "2026-05-22T02:10:15Z"
+
+  - description: "Failed login attempt #3 — Okta brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.session.start
+      outcome:
+        result: FAILURE
+        reason: INVALID_CREDENTIALS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        id: okta-user-contractor-001
+      client:
+        ipAddress: 185.220.101.47
+        geographicalContext:
+          country: RO
+          city: Bucharest
+      authenticationContext:
+        credentialType: PASSWORD
+      uuid: okta-brute-003
+      published: "2026-05-22T02:10:30Z"
+
+  - description: "Failed login attempt #4 — Okta brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.session.start
+      outcome:
+        result: FAILURE
+        reason: INVALID_CREDENTIALS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        id: okta-user-contractor-001
+      client:
+        ipAddress: 185.220.101.47
+      authenticationContext:
+        credentialType: PASSWORD
+      uuid: okta-brute-004
+      published: "2026-05-22T02:10:45Z"
+
+  - description: "Failed login attempt #5 — Okta brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.session.start
+      outcome:
+        result: FAILURE
+        reason: INVALID_CREDENTIALS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        id: okta-user-contractor-001
+      client:
+        ipAddress: 185.220.101.47
+      authenticationContext:
+        credentialType: PASSWORD
+      uuid: okta-brute-005
+      published: "2026-05-22T02:11:00Z"
+
+  - description: "Failed login attempt #6 — Auth0 brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Auth0.Events
+      log_id: auth0-brute-006
+      data:
+        type: f
+        user_name: contractor.jsmith@corp.beazley.com
+        user_id: auth0-user-contractor-001
+        ip: 185.220.101.47
+        description: Wrong email or password
+        client_name: Corporate Portal
+        client_id: auth0-client-corp-001
+        location_info:
+          country_code: RO
+          country_name: Romania
+          city_name: Bucharest
+          isp: Hetzner Online GmbH
+
+  - description: "Failed login attempt #7 — Auth0 brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Auth0.Events
+      log_id: auth0-brute-007
+      data:
+        type: fp
+        user_name: contractor.jsmith@corp.beazley.com
+        ip: 185.220.101.47
+        description: Wrong email or password
+        client_name: Corporate Portal
+        client_id: auth0-client-corp-001
+        location_info:
+          country_code: RO
+          country_name: Romania
+
+  - description: "Failed login attempt #8 — Auth0 brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Auth0.Events
+      log_id: auth0-brute-008
+      data:
+        type: f
+        user_name: contractor.jsmith@corp.beazley.com
+        ip: 185.220.101.47
+        description: Wrong email or password
+        client_name: Corporate Portal
+
+  - description: "Failed login attempt #9 — Entra brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Azure.Audit
+      category: SignInLogs
+      operationName: Sign-in activity
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-brute-009
+      properties:
+        userPrincipalName: contractor.jsmith@corp.beazley.com
+        userId: entra-user-contractor-001
+        ipAddress: 185.220.101.47
+        status:
+          errorCode: 50126
+          failureReason: Invalid username or password
+        conditionalAccessStatus: notApplied
+        authenticationDetails:
+          - authenticationMethod: Password
+            succeeded: false
+        location:
+          countryOrRegion: RO
+          city: Bucharest
+
+  - description: "Failed login attempt #10 — Entra brute force"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Azure.Audit
+      category: SignInLogs
+      operationName: Sign-in activity
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-brute-010
+      properties:
+        userPrincipalName: contractor.jsmith@corp.beazley.com
+        userId: entra-user-contractor-001
+        ipAddress: 185.220.101.47
+        status:
+          errorCode: 50126
+          failureReason: Invalid username or password
+        conditionalAccessStatus: notApplied
+        location:
+          countryOrRegion: RO
+          city: Bucharest
+
+  - description: "Failed login attempt #11 — Entra brute force (crosses threshold)"
+    malicious: true
+    scenario: identity_stage_1
+    expected_detection: Identity.BruteForce.FailedLogins
+    event:
+      p_log_type: Azure.Audit
+      category: SignInLogs
+      operationName: Sign-in activity
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-brute-011
+      properties:
+        userPrincipalName: contractor.jsmith@corp.beazley.com
+        userId: entra-user-contractor-001
+        ipAddress: 185.220.101.47
+        status:
+          errorCode: 50126
+          failureReason: Invalid username or password
+        conditionalAccessStatus: notApplied
+        location:
+          countryOrRegion: RO
+          city: Bucharest
+
+  # ─────────────────────────────────────────────────────────────
+  #  STAGE 2 — Successful Login (attacker found the password)
+  #  Fires: Identity.OffHours.AnomalousLogin
+  #         Identity.HighRisk.CountryLogin
+  # ─────────────────────────────────────────────────────────────
+
+  - description: "Successful login — attacker accessed account (off-hours, Romania, no MFA)"
+    malicious: true
+    scenario: identity_stage_2
+    expected_detection: Identity.OffHours.AnomalousLogin
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.session.start
+      outcome:
+        result: SUCCESS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        displayName: James Smith (Contractor)
+        id: okta-user-contractor-001
+        type: User
+      client:
+        ipAddress: 185.220.101.47
+        device: Computer
+        geographicalContext:
+          country: RO
+          city: Bucharest
+          state: Bucharest
+        userAgent:
+          rawUserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0"
+          browser: Chrome
+          os: Windows 10
+      authenticationContext:
+        credentialType: PASSWORD
+        authenticationProvider: OKTA
+        externalSessionId: okta-session-attacker-001
+      securityContext:
+        isp: Hetzner Online GmbH
+        isProxy: false
+        asNumber: 24940
+        asOrg: Hetzner Online GmbH
+      transaction:
+        id: okta-txn-001
+        type: WEB
+      uuid: okta-success-001
+      published: "2026-05-22T02:15:00Z"
+      severity: INFO
+
+  # ─────────────────────────────────────────────────────────────
+  #  STAGE 3 — Post-Compromise Actions
+  #  Fires: Identity.MFA.Reset
+  #         Identity.PrivilegeEscalation.RoleAssigned
+  #         Identity.AccountCreated
+  # ─────────────────────────────────────────────────────────────
+
+  - description: "MFA reset on target account — attacker locking out legitimate user"
+    malicious: true
+    scenario: identity_stage_3
+    expected_detection: Identity.MFA.Reset
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.mfa.factor.deactivate
+      outcome:
+        result: SUCCESS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        displayName: James Smith (Contractor)
+        id: okta-user-contractor-001
+        type: User
+      target:
+        - type: User
+          alternateId: alee@corp.beazley.com
+          displayName: Alice Lee
+          id: okta-user-alee-001
+        - type: UserFactor
+          displayName: token:software:totp
+      client:
+        ipAddress: 185.220.101.47
+        geographicalContext:
+          country: RO
+          city: Bucharest
+      uuid: okta-mfa-reset-001
+      published: "2026-05-22T02:20:00Z"
+      severity: WARN
+
+  - description: "MFA cleared on second account via Entra"
+    malicious: true
+    scenario: identity_stage_3
+    expected_detection: Identity.MFA.Reset
+    event:
+      p_log_type: Azure.Audit
+      category: AuditLogs
+      operationName: Update user
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-mfa-reset-001
+      properties:
+        activityDisplayName: Update user
+        result: success
+        category: UserManagement
+        initiatedBy:
+          user:
+            userPrincipalName: contractor.jsmith@corp.beazley.com
+            ipAddress: 185.220.101.47
+            id: entra-user-contractor-001
+        targetResources:
+          - type: User
+            userPrincipalName: rbrown@corp.beazley.com
+            displayName: Robert Brown
+            modifiedProperties:
+              - displayName: StrongAuthenticationMethods
+                oldValue: '[{"MethodType":"PhoneAppNotification","Default":true}]'
+                newValue: "[]"
+
+  - description: "Backdoor account created by compromised contractor"
+    malicious: true
+    scenario: identity_stage_3
+    expected_detection: Identity.AccountCreated
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.lifecycle.create
+      outcome:
+        result: SUCCESS
+      actor:
+        alternateId: contractor.jsmith@corp.beazley.com
+        displayName: James Smith (Contractor)
+        id: okta-user-contractor-001
+        type: User
+      target:
+        - type: User
+          alternateId: svc.sync@corp.beazley.com
+          displayName: Service Sync Account
+          id: okta-user-backdoor-001
+      client:
+        ipAddress: 185.220.101.47
+        geographicalContext:
+          country: RO
+          city: Bucharest
+      uuid: okta-create-backdoor-001
+      published: "2026-05-22T02:25:00Z"
+      severity: INFO
+
+  - description: "Global admin role assigned to backdoor account"
+    malicious: true
+    scenario: identity_stage_3
+    expected_detection: Identity.PrivilegeEscalation.RoleAssigned
+    event:
+      p_log_type: Azure.Audit
+      category: AuditLogs
+      operationName: Add member to role
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-role-001
+      properties:
+        activityDisplayName: Add member to role
+        result: success
+        category: RoleManagement
+        initiatedBy:
+          user:
+            userPrincipalName: contractor.jsmith@corp.beazley.com
+            ipAddress: 185.220.101.47
+            id: entra-user-contractor-001
+        targetResources:
+          - type: User
+            userPrincipalName: svc.sync@corp.beazley.com
+            displayName: Service Sync Account
+          - type: Role
+            displayName: Global Administrator
+            id: 62e90394-69f5-4237-9190-012177145e10
+
+  - description: "High-risk country login — Google Workspace admin panel"
+    malicious: true
+    scenario: identity_stage_3
+    expected_detection: Identity.HighRisk.CountryLogin
+    event:
+      p_log_type: Okta.SystemLog
+      eventType: user.authentication.sso
+      outcome:
+        result: SUCCESS
+      actor:
+        alternateId: svc.sync@corp.beazley.com
+        displayName: Service Sync Account
+        id: okta-user-backdoor-001
+        type: User
+      target:
+        - type: AppInstance
+          displayName: Google Workspace Admin
+          id: okta-app-google-001
+      client:
+        ipAddress: 185.220.101.47
+        geographicalContext:
+          country: CN
+          city: Beijing
+      authenticationContext:
+        credentialType: PASSWORD
+        authenticationProvider: OKTA
+      securityContext:
+        isp: China Telecom
+        isProxy: false
+        asNumber: 4134
+        asOrg: CHINANET-BACKBONE
+      uuid: okta-highrisk-001
+      published: "2026-05-22T02:30:00Z"
+      severity: INFO

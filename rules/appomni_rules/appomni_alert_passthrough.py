@@ -18,7 +18,7 @@ def title(event):
     else:
         service = "Multiple Services"
 
-    return f'[{sev}] - {service} - {event.get("message")}'
+    return f'[{sev}] - {service} - {event.get("message")}'  #test2 made by olsen
 
 
 def severity(event):

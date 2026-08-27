@@ -1,0 +1,78 @@
+AnalysisType: datamodel
+LogTypes:
+    - MicrosoftDefenderXDR.AdvancedHunting
+DataModelID: "EDR.MicrosoftDefender"
+DisplayName: "EDR-MicrosoftDefender-UDM"
+Filename: edr_microsoftdefender_v2.py
+Enabled: true
+Mappings:
+    - Name: device_ip
+      Method: get_device_ip
+    - Name: dns_request
+      Method: get_dns_request
+    - Name: event_category
+      Method: get_event_category
+    - Name: event_time
+      Method: get_event_time
+    - Name: event_type
+      Method: get_event_type
+    - Name: file_md5
+      Method: get_file_md5
+    - Name: file_name
+      Method: get_file_name
+    - Name: file_path
+      Method: get_file_path
+    - Name: file_sha256
+      Method: get_file_sha256
+    - Name: hostname
+      Method: get_hostname
+    - Name: network_direction
+      Method: get_network_direction
+    - Name: network_dst_ip
+      Method: get_network_dst_ip
+    - Name: network_dst_port
+      Method: get_network_dst_port
+    - Name: network_protocol
+      Method: get_network_protocol
+    - Name: network_src_ip
+      Method: get_network_src_ip
+    - Name: network_src_port
+      Method: get_network_src_port
+    - Name: os_platform
+      Method: get_os_platform
+    - Name: parent_process_cmdline
+      Method: get_parent_process_cmdline
+    - Name: parent_process_name
+      Method: get_parent_process_name
+    - Name: parent_process_path
+      Method: get_parent_process_path
+    - Name: parent_process_pid
+      Method: get_parent_process_pid
+    - Name: parent_process_sha256
+      Method: get_parent_process_sha256
+    - Name: process_cmdline
+      Method: get_process_cmdline
+    - Name: process_integrity_level
+      Method: get_process_integrity_level
+    - Name: process_md5
+      Method: get_process_md5
+    - Name: process_name
+      Method: get_process_name
+    - Name: process_path
+      Method: get_process_path
+    - Name: process_pid
+      Method: get_process_pid
+    - Name: process_sha1
+      Method: get_process_sha1
+    - Name: process_sha256
+      Method: get_process_sha256
+    - Name: process_start_time
+      Method: get_process_start_time
+    - Name: sensor_id
+      Method: get_sensor_id
+    - Name: user_is_admin
+      Method: get_user_is_admin
+    - Name: user_sid
+      Method: get_user_sid
+    - Name: username
+      Method: get_username

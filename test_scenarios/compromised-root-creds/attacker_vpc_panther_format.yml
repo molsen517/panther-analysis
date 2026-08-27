@@ -1,0 +1,13 @@
+---
+LogType: AWS.VPCFlow
+Format: raw
+Logs:
+  # Header row matching Panther's expected format
+  - "account-id action az-id bytes dstaddr dstport end flow-direction instance-id interface-id log-status packets pkt-dst-aws-service pkt-dstaddr pkt-src-aws-service pkt-srcaddr protocol region reject-reason srcaddr srcport start sublocation-id sublocation-type subnet-id tcp-flags traffic-path type version vpc-id"
+  # Data rows matching Panther's expected format (September 2025 timestamps)
+  - "493859302102 ACCEPT us-east-1a 7119 172.31.77.31 22 1758038400 ingress i-12345678901234567 eni-0b13344793d4fde67 OK 19 - 172.31.77.31 - 92.55.146.245 6 us-east-1 - 92.55.146.245 48316 1758038344 - - subnet-12345678 2 - IPv4 3 vpc-12345678"
+  - "493859302102 ACCEPT us-east-1a 7119 92.55.146.245 48316 1758038400 egress i-12345678901234567 eni-0b13344793d4fde67 OK 19 - 92.55.146.245 - 172.31.77.31 6 us-east-1 - 172.31.77.31 22 1758038345 - - subnet-12345678 18 - IPv4 3 vpc-12345678"
+  - "493859302102 REJECT us-east-1a 7119 172.31.77.1 443 1758038351 ingress i-12345678901234567 eni-0b13344793d4fde67 OK 19 - 172.31.77.1 - 172.31.77.31 6 us-east-1 - 172.31.77.31 48316 1758038350 - - subnet-12345678 2 - IPv4 3 vpc-12345678"
+  - "493859302102 ACCEPT us-east-1a 3048576 172.31.77.31 443 1758038395 ingress i-12345678901234567 eni-0b13344793d4fde67 OK 19 S3 172.31.77.31 - 52.216.229.53 6 us-east-1 - 52.216.229.53 58316 1758038390 - - subnet-12345678 2 - IPv4 3 vpc-12345678"
+  - "493859302102 ACCEPT us-east-1a 1048576 92.55.146.245 22 1758038430 egress i-12345678901234567 eni-0b13344793d4fde67 OK 19 - 92.55.146.245 - 172.31.77.31 6 us-east-1 - 172.31.77.31 38316 1758038400 - - subnet-12345678 2 - IPv4 3 vpc-12345678"
+  - "493859302102 ACCEPT us-east-1a 1048576 92.55.146.245 22 1758038460 egress i-12345678901234567 eni-0b13344793d4fde67 OK 19 - 92.55.146.245 - 172.31.77.31 6 us-east-1 - 172.31.77.31 38316 1758038430 - - subnet-12345678 2 - IPv4 3 vpc-12345678"

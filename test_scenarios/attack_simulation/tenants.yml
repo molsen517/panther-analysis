@@ -1,0 +1,74 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Panther Tenant Configuration
+#  Add a new tenant block to support additional environments.
+#  Each tenant needs one entry per log source with url + token.
+#
+#  Usage:
+#    python send_edr_events.py --tenant beazley --events-file killchain_test_events.yml
+#    python send_edr_events.py --tenant partner-team --events-file ai_triage_test_events.yml
+# ─────────────────────────────────────────────────────────────────────────────
+
+beazley:
+  api_host: https://beazley-security.runpanther.net
+  log_sources:
+    sentinelone:
+      url: https://logs.beazley-security.runpanther.net/http/81f94a2f-bf2a-4a70-b35f-478651a240f6
+      token: 3d76b737-7514-4fe8-93b2-797899c4f0c4
+    crowdstrike:
+      url: https://logs.beazley-security.runpanther.net/http/6e7c38d7-32e2-4069-ba6a-15d7cff929b8
+      token: 02ce567b-4f27-4c4e-844d-24a26030f28a
+    carbonblack:
+      url: https://logs.beazley-security.runpanther.net/http/e6f974f3-8c30-4119-a507-0766227f013e
+      token: 086cd112-facf-460e-941f-cd59299a949c
+    defender:
+      url: https://logs.beazley-security.runpanther.net/http/938c95b7-ec3f-4126-bb39-37ae70002c93
+      token: a7d033b8-90b6-4793-ad71-c53e07e76af0
+    azure_audit:
+      url: https://logs.beazley-security.runpanther.net/http/7b5ce37c-b3e6-4e79-a52b-933e9255216e
+      token: 1a7e0ff7-eeee-4a52-ab72-c92a0285d2d9
+    aws_cloudtrail:
+      url: https://logs.beazley-security.runpanther.net/http/761ca498-6ea0-49e3-9640-324e1cbd6398
+      token: 74fb5609-e439-4281-9983-f7963f7606a8
+    okta:
+      url: https://logs.beazley-security.runpanther.net/http/35293972-7f44-432d-87f7-d0f2e63d7cf1
+      token: 2bb06fcd-b055-491d-a7ef-bd130b360c4f
+    auth0:
+      url: https://logs.beazley-security.runpanther.net/http/27675125-2b41-4920-8512-23362546219e
+      token: 58f04ce1-cbde-4ff5-b564-a599e7a25576
+    gsuite:
+      url: https://logs.beazley-security.runpanther.net/http/31a87aeb-b276-4f01-b826-a5e038e581c1
+      token: c4e01413-5de5-4194-8476-8b6dcfffadbc
+
+partner-team:
+  api_host: https://panther-partner-team.runpanther.net
+  log_sources:
+    sentinelone:
+      url: https://logs.panther-partner-team.runpanther.net/http/09df106e-4a54-4a0b-bb33-79751ad7ec1f
+      token: abd798ca-b0de-49de-b818-232f825a9ef0
+    crowdstrike:
+      url: https://logs.panther-partner-team.runpanther.net/http/REPLACE-WITH-UUID
+      token: REPLACE-WITH-TOKEN
+    carbonblack:
+      url: https://logs.panther-partner-team.runpanther.net/http/REPLACE-WITH-UUID
+      token: REPLACE-WITH-TOKEN
+    defender:
+      url: https://logs.panther-partner-team.runpanther.net/http/REPLACE-WITH-UUID
+      token: REPLACE-WITH-TOKEN
+    azure_audit:
+      url: https://logs.panther-partner-team.runpanther.net/http/81151e7a-0f30-400d-abff-c04aad559a54
+      token: 0527a12f-1caa-4ac7-a78c-ec1ab5967dda
+    aws_cloudtrail:
+      url: https://logs.panther-partner-team.runpanther.net/http/814dce5d-c3b9-42e9-8626-daf714e60221
+      token: 4d35e845-8d97-4584-be82-2095d56d67d3
+    okta:
+      url: https://logs.panther-partner-team.runpanther.net/http/bc91a3eb-7192-4cbe-91c7-fda88e62e023
+      token: 46c42ea1-2451-4285-8e12-c2ae04920286
+    auth0:
+      url: https://logs.panther-partner-team.runpanther.net/http/f2882686-5f8f-4a3d-a595-ae670b2f3fb5
+      token: c789170d-b6ab-4449-8e42-11595a67054f
+    gsuite:
+      url: https://logs.panther-partner-team.runpanther.net/http/b890c0bc-e3ed-458d-9646-c89da82a7ec5
+      token: a652fa15-c8de-486c-99fb-05e63954500a
+    onepassword:
+      url: https://logs.panther-partner-team.runpanther.net/http/ecc5e563-8bb1-42d1-93ea-c2be008ebba6
+      token: bb5daf57-66a7-4b71-9d6b-d1d08197b5f6

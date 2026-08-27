@@ -1,0 +1,128 @@
+AnalysisType: rule
+RuleID: "Insider.AWS.S3.CrossAccount.Exfiltration"
+DisplayName: "AWS - S3 Cross-Account PutObject Exfiltration"
+Filename: aws_s3_crossaccount_exfil.py
+Enabled: true
+Severity: High
+LogTypes:
+  - AWS.CloudTrail
+Tags:
+  - insider-threat
+  - exfiltration
+  - data-exfiltration
+  - ATT&CK:T1567.002
+  - ATT&CK:T1048
+  - Detection.POC
+Reports:
+  MITRE ATT&CK:
+    - TA0010:T1567.002
+    - TA0010:T1048
+Description: >
+  Detects S3 PutObject or CopyObject where the destination bucket belongs
+  to a different AWS account than the source principal — indicating data
+  exfiltration to an external or attacker-controlled bucket. Also fires on
+  PutObject where the bucket ACL grants public access. Final stage of the
+  insider threat / compromised contractor exfiltration chain.
+DedupPeriodMinutes: 60
+Threshold: 1
+Runbook: >
+  1. Identify source principal (userIdentity.arn) and destination bucket.
+  2. Determine if destination account ID is known/approved.
+  3. Enumerate all objects written to the destination bucket.
+  4. Cross-reference source principal with Entra off-hours login signal.
+  5. Cross-reference with S3 bulk GetObject from same principal.
+  6. If destination account unknown — treat as active exfiltration.
+  7. Immediately revoke source principal IAM credentials.
+  8. Preserve CloudTrail logs and S3 access logs for forensics.
+Tests:
+  - Name: PutObject to cross-account bucket
+    ExpectedResult: true
+    Log:
+      {
+        "eventVersion": "1.08",
+        "eventTime": "2026-05-22T03:15:00Z",
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "PutObject",
+        "eventType": "AwsApiCall",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "185.220.101.47",
+        "userAgent": "aws-cli/2.13.0",
+        "requestParameters": {
+          "bucketName": "exfil-staging-bucket-attacker",
+          "key": "stolen/financial_summary.xlsx",
+          "bucketAccountId": "999888777666"
+        },
+        "responseElements": {
+          "x-amz-id-2": "example",
+          "x-amz-request-id": "example"
+        },
+        "userIdentity": {
+          "type": "IAMUser",
+          "principalId": "AIDAEXAMPLEID",
+          "arn": "arn:aws:iam::123456789012:user/contractor-jsmith",
+          "accountId": "123456789012",
+          "userName": "contractor-jsmith"
+        },
+        "eventID": "evt-s3-put-001",
+        "requestID": "req-s3-put-001",
+        "recipientAccountId": "123456789012",
+        "readOnly": false,
+        "managementEvent": false
+      }
+  - Name: PutObject within same account - should not fire
+    ExpectedResult: false
+    Log:
+      {
+        "eventVersion": "1.08",
+        "eventTime": "2026-05-22T14:00:00Z",
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "PutObject",
+        "eventType": "AwsApiCall",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "10.0.1.50",
+        "userAgent": "aws-cli/2.13.0",
+        "requestParameters": {
+          "bucketName": "corp-internal-bucket",
+          "key": "reports/q4_report.pdf"
+        },
+        "userIdentity": {
+          "type": "IAMUser",
+          "arn": "arn:aws:iam::123456789012:user/admin-bob",
+          "accountId": "123456789012",
+          "userName": "admin-bob"
+        },
+        "eventID": "evt-s3-put-002",
+        "requestID": "req-s3-put-002",
+        "recipientAccountId": "123456789012",
+        "readOnly": false
+      }
+  - Name: CopyObject to external account
+    ExpectedResult: true
+    Log:
+      {
+        "eventVersion": "1.08",
+        "eventTime": "2026-05-22T03:22:00Z",
+        "eventSource": "s3.amazonaws.com",
+        "eventName": "CopyObject",
+        "eventType": "AwsApiCall",
+        "awsRegion": "us-east-1",
+        "sourceIPAddress": "185.220.101.47",
+        "userAgent": "boto3/1.26.0",
+        "requestParameters": {
+          "bucketName": "external-attacker-bucket",
+          "key": "exfil/data.zip",
+          "x-amz-copy-source": "corp-financial-records-prod/2024/Q4/all_data.zip",
+          "bucketAccountId": "555444333222"
+        },
+        "userIdentity": {
+          "type": "IAMUser",
+          "arn": "arn:aws:iam::123456789012:user/contractor-jsmith",
+          "accountId": "123456789012",
+          "userName": "contractor-jsmith"
+        },
+        "eventID": "evt-s3-copy-001",
+        "requestID": "req-s3-copy-001",
+        "recipientAccountId": "123456789012",
+        "readOnly": false,
+        "managementEvent": false
+      }

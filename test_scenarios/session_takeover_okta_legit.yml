@@ -1,0 +1,36 @@
+Logs:
+  - eventType: user.session.context.change
+    version: "0"
+    severity: WARN
+    displayMessage: Session context change detected
+    uuid: abc12345-0001-0001-0001-abcdef123456
+    published: "2026-04-15T14:22:00.000Z"
+    actor:
+      id: 00utstone00000000001
+      type: User
+      alternateId: tracey.stone@company.com
+      displayName: Tracey Stone
+    client:
+      device: Computer
+      ipAddress: 76.14.55.210
+      userAgent:
+        rawUserAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36
+        os: Mac OS X
+        browser: CHROME
+      geographicalContext:
+        city: Dallas
+        state: Texas
+        country: United States
+        geolocation:
+          lat: 32.78
+          lon: -96.80
+    authenticationContext:
+      externalSessionId: stolen-session-id-tstone-001
+      authenticationStep: 0
+    outcome:
+      result: SUCCESS
+    debugContext:
+      debugData:
+        riskLevel: LOW
+        changedAttributes: IP_ADDRESS
+    p_log_type: Okta.SystemLog

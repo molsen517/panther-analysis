@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Master script to run all compromised root credentials test scenarios in sequence.
-This script executes all the individual scenario scripts in the correct order.
+This script executes all the individual scenario scripts in the correct order, or a user-specified subset.
 """
 
 import subprocess
@@ -17,7 +17,8 @@ SCRIPTS = [
     "04_send_attacker_cloudtrail.py",
     "05_send_attacker_s3_access.py",
     "06_send_attacker_vpc.py",
-    "07_send_session_takeover_okta.py"
+    "07_send_session_takeover_okta.py",
+    "08_send_access_key_compromise.py"
 ]
 
 def run_script(script_name):
@@ -37,31 +38,49 @@ def run_script(script_name):
         print(f"❌ {script_name} not found")
         return False
 
+def parse_selection(selection, num_scripts):
+    selection = selection.replace(' ', '')
+    indices = set()
+    for part in selection.split(','):
+        if '-' in part:
+            try:
+                start, end = part.split('-')
+                indices.update(range(int(start)-1, int(end)))
+            except Exception:
+                continue
+        else:
+            if part.isdigit():
+                indices.add(int(part)-1)
+    # Filter out-of-range indices
+    return [i for i in sorted(indices) if 0 <= i < num_scripts]
+
 def main():
-    """Run all test scenario scripts in sequence."""
     print("🚀 Starting Compromised Root Credentials Test Scenario")
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("\nThis will run the following scenarios in order:")
     for i, script in enumerate(SCRIPTS, 1):
         print(f"  {i}. {script}")
-    
+
     print(f"\n⚠️  Make sure you have updated config.py with your AWS account details!")
     print("   - AWS_ACCOUNT_ID")
     print("   - PANTHER_BUCKET_NAME")
     print("   - AWS_REGION (if different)")
-    
-    # Ask for confirmation
-    response = input("\nProceed with running all scenarios? (y/N): ").strip().lower()
-    if response not in ['y', 'yes']:
-        print("Aborted by user.")
-        sys.exit(0)
-    
-    # Track results
+
+    print("\nEnter scenario numbers to run (e.g. 1,3,5 or 2-4 or 1,3-5,8). Leave blank to run all:")
+    selection = input("Scenarios: ").strip()
+    if selection:
+        indices = parse_selection(selection, len(SCRIPTS))
+        if not indices:
+            print("Invalid selection. Aborting.")
+            sys.exit(1)
+        selected_scripts = [SCRIPTS[i] for i in indices]
+    else:
+        selected_scripts = SCRIPTS
+
     successful = 0
     failed = 0
-    
-    # Run each script
-    for script in SCRIPTS:
+
+    for script in selected_scripts:
         if run_script(script):
             successful += 1
         else:
@@ -71,18 +90,15 @@ def main():
             if response not in ['y', 'yes']:
                 print("Stopping execution due to user request.")
                 break
-        
-        # Small delay between scripts
         time.sleep(2)
-    
-    # Summary
+
     print(f"\n{'='*60}")
     print("EXECUTION SUMMARY")
     print(f"{'='*60}")
     print(f"✅ Successful: {successful}")
     print(f"❌ Failed: {failed}")
     print(f"📊 Total: {successful + failed}")
-    
+
     if failed == 0:
         print("\n🎉 All scenarios completed successfully!")
         print("Check your Panther console for the ingested logs.")

@@ -1,0 +1,36 @@
+Logs:
+  - eventType: user.session.context.change
+    version: "0"
+    severity: HIGH
+    displayMessage: Session context change detected - high risk
+    uuid: abc12345-0002-0002-0002-abcdef654321
+    published: "2026-04-15T14:47:00.000Z"
+    actor:
+      id: 00utstone00000000001
+      type: User
+      alternateId: tracey.stone@company.com
+      displayName: Tracey Stone
+    client:
+      device: Unknown
+      ipAddress: 5.2.75.233
+      userAgent:
+        rawUserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36
+        os: Windows 10
+        browser: CHROME
+      geographicalContext:
+        city: Bucharest
+        state: Ilfov
+        country: Romania
+        geolocation:
+          lat: 44.43
+          lon: 26.10
+    authenticationContext:
+      externalSessionId: stolen-session-id-tstone-001
+      authenticationStep: 0
+    outcome:
+      result: SUCCESS
+    debugContext:
+      debugData:
+        riskLevel: HIGH
+        changedAttributes: IP_ADDRESS,DEVICE,GEO_LOCATION
+    p_log_type: Okta.SystemLog

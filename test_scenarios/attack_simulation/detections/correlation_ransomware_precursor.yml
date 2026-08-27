@@ -1,0 +1,48 @@
+AnalysisType: correlation_rule
+RuleID: "Correlation.RansomwarePrecursor.KillChain"
+DisplayName: "Correlation — Ransomware Precursor Kill Chain"
+Enabled: true
+Severity: Critical
+Tags:
+  - kill-chain
+  - ransomware-precursor
+  - multi-stage
+  - ATT&CK:T1059.001
+  - ATT&CK:T1098.005
+  - ATT&CK:T1490
+Reports:
+  MITRE ATT&CK:
+    - TA0002:T1059.001
+    - TA0003:T1098.005
+    - TA0040:T1490
+Description: >
+  Correlates three stages of a ransomware precursor kill chain across
+  SentinelOne, Entra ID, and AWS CloudTrail. Fires Critical when LOLBin
+  or credential access on endpoint is followed by MFA reset or admin role
+  assignment in identity, then backup destruction in cloud — consistent
+  with Scattered Spider and BlackCat/ALPHV TTPs.
+
+Detection:
+  - Sequence:
+      - ID: stage_1_edr
+        RuleID: "EDR.SentinelOne.LOLBin.CredentialAccess"
+        MinMatchCount: 1
+      - ID: stage_2_identity
+        RuleID: "Identity.EntraID.MFAReset.AdminRoleAdded"
+        MinMatchCount: 1
+      - ID: stage_3_cloud
+        RuleID: "Cloud.AWS.BackupDestruction"
+        MinMatchCount: 1
+    Transitions:
+      - ID: "LOLBin FOLLOWED BY Identity Takeover"
+        From: stage_1_edr
+        To: stage_2_identity
+        WithinTimeFrameMinutes: 120
+      - ID: "Identity Takeover FOLLOWED BY Backup Destruction"
+        From: stage_2_identity
+        To: stage_3_cloud
+        WithinTimeFrameMinutes: 120
+    LookbackWindowMinutes: 720
+    Schedule:
+      RateMinutes: 5
+      TimeoutMinutes: 3

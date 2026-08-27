@@ -1,0 +1,106 @@
+AnalysisType: rule
+RuleID: "Identity.EntraID.MFAReset.AdminRoleAdded"
+DisplayName: "Identity — Entra ID MFA Reset or Admin Role Assigned"
+Filename: identity_entraid_mfa_admin.py
+Enabled: true
+Severity: High
+LogTypes:
+  - Azure.Audit
+Tags:
+  - identity
+  - entra-id
+  - persistence
+  - privilege-escalation
+  - ATT&CK:T1098.005
+  - ATT&CK:T1078.004
+Reports:
+  MITRE ATT&CK:
+    - TA0003:T1098.005
+    - TA0004:T1078.004
+DedupPeriodMinutes: 60
+Threshold: 1
+Description: >
+  Detects MFA being cleared on user accounts or users being added to
+  privileged administrator roles in Entra ID. Fires on AuditLogs category
+  events. Common in account takeover scenarios following initial credential
+  compromise.
+Runbook: >
+  1. Identify actor UPN and IP from alert_context.
+  2. External IP performing MFA reset or role assignment is critical.
+  3. Verify against change management records.
+  4. If unauthorised — revoke sessions, re-enable MFA, remove role.
+  5. Correlate with EDR for same IP or timeframe.
+Tests:
+  - Name: MFA methods cleared
+    ExpectedResult: true
+    Log:
+      {
+        "category": "AuditLogs",
+        "operationName": "Update user",
+        "callerIpAddress": "185.220.101.47",
+        "correlationId": "test-corr-001",
+        "properties": {
+          "activityDisplayName": "Update user",
+          "result": "success",
+          "initiatedBy": {
+            "user": {
+              "userPrincipalName": "admin@corp.example.com",
+              "ipAddress": "185.220.101.47"
+            }
+          },
+          "targetResources": [
+            {
+              "type": "User",
+              "userPrincipalName": "victim@corp.example.com",
+              "modifiedProperties": [
+                {
+                  "displayName": "StrongAuthenticationMethods",
+                  "oldValue": "[{\"MethodType\":\"PhoneAppNotification\"}]",
+                  "newValue": "[]"
+                }
+              ]
+            }
+          ]
+        }
+      }
+  - Name: Global Administrator role assigned
+    ExpectedResult: true
+    Log:
+      {
+        "category": "AuditLogs",
+        "operationName": "Add member to role",
+        "callerIpAddress": "185.220.101.47",
+        "correlationId": "test-corr-002",
+        "properties": {
+          "activityDisplayName": "Add member to role",
+          "result": "success",
+          "initiatedBy": {
+            "user": {
+              "userPrincipalName": "admin@corp.example.com",
+              "ipAddress": "185.220.101.47"
+            }
+          },
+          "targetResources": [
+            {
+              "type": "User",
+              "userPrincipalName": "backdoor@corp.example.com"
+            },
+            {
+              "type": "Role",
+              "displayName": "Global Administrator"
+            }
+          ]
+        }
+      }
+  - Name: Sign-in event - should not fire
+    ExpectedResult: false
+    Log:
+      {
+        "category": "SignInLogs",
+        "operationName": "Sign-in activity",
+        "callerIpAddress": "10.0.1.50",
+        "properties": {
+          "userPrincipalName": "user@corp.example.com",
+          "status": {"errorCode": 0}
+        }
+      }

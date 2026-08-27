@@ -1,0 +1,25 @@
+Logs:
+  - eventVersion: "1.08"
+    userIdentity:
+      type: IAMUser
+      principalId: AIDIOSFODNN7EXAMPLE001
+      arn: arn:aws:iam::123456789012:user/david.nguyen
+      accountId: "123456789012"
+      accessKeyId: AKIAIOSFODNN7EXAMPLEB
+      userName: david.nguyen
+    eventTime: "2026-04-15T09:15:00Z"
+    eventSource: s3.amazonaws.com
+    eventName: GetObject
+    awsRegion: us-east-1
+    sourceIPAddress: 76.14.55.201
+    userAgent: aws-cli/2.9.0 Python/3.11.0 Darwin/22.0.0
+    requestParameters:
+      bucketName: company-prod-data
+      key: reports/Q1-2026.csv
+    responseElements: null
+    requestID: NORMAL-REQUEST-001
+    eventID: normal-event-id-001
+    readOnly: true
+    eventType: AwsApiCall
+    p_log_type: AWS.CloudTrail
+    p_event_time: "2026-04-15 09:15:00.000000000"

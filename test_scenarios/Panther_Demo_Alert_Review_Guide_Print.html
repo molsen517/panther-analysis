@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panther Demo: Alert Review Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background: white;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #2980b9;
+            margin-top: 25px;
+        }
+        
+        .alert-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .alert-critical {
+            border-left: 5px solid #e74c3c;
+            background: #fdf2f2;
+        }
+        
+        .alert-high {
+            border-left: 5px solid #f39c12;
+            background: #fef9e7;
+        }
+        
+        .alert-medium {
+            border-left: 5px solid #3498db;
+            background: #f0f8ff;
+        }
+        
+        .timeline {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .timeline-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #3498db;
+        }
+        
+        .demo-script {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        
+        .key-points {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .key-points h4 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            body { font-size: 12px; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>🛡️ Panther Demo: Compromised Root Credentials Attack Scenario</h1>
+<h2 style="text-align: center; color: #7f8c8d;">Recommended Alert Review Order for Customer Demonstrations</h2>
+
+<div class="timeline">
+    <h3>📋 Attack Overview</h3>
+    <p><strong>Scenario:</strong> Compromised AWS Root Credentials Attack</p>
+    <p><strong>Timeline:</strong> September 15, 2025</p>
+    <p><strong>Duration:</strong> 5-day attack progression</p>
+    <p><strong>Impact:</strong> Data exfiltration, privilege escalation, persistent access</p>
+</div>
+
+<h2>🎯 Demo Script: Recommended Alert Review Order</h2>
+
+<h3>Phase 1: Set the Context (5 minutes)</h3>
+<div class="demo-script">
+"Let me show you how Panther detected a sophisticated attack that unfolded over several days in September 2025."
+</div>
+
+<div class="alert-box alert-medium">
+    <h4>1. Start with the Victim Baseline</h4>
+    <p><strong>Alert:</strong> <code>AWS.CloudTrail.NormalConsoleActivity</code> or <code>Okta.SystemLog.SuccessfulLogin</code></p>
+    <p><strong>Purpose:</strong> Establish normal user behavior</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>Show legitimate user (Tracey Stone) logging in from San Francisco</li>
+            <li>Demonstrate normal AWS console activity</li>
+            <li>Set baseline for comparison</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "Here we see normal, legitimate activity from our employee Tracey Stone logging into AWS from San Francisco. This establishes our baseline of normal behavior."
+    </div>
+</div>
+
+<h3>Phase 2: Show the Reconnaissance (3 minutes)</h3>
+<div class="demo-script">
+"Now let's see how the attacker began their reconnaissance."
+</div>
+
+<div class="alert-box alert-high">
+    <h4>2. Failed Login Attempts</h4>
+    <p><strong>Alert:</strong> <code>Okta.SystemLog.MultipleFailedLogins</code> or <code>Okta.SystemLog.SuspiciousLoginLocation</code></p>
+    <p><strong>Purpose:</strong> Show attacker reconnaissance</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>Multiple failed login attempts from Romania (92.55.146.245)</li>
+            <li>Attempting to use similar username (tracy_stone vs tracey_stone)</li>
+            <li>Geographic anomaly detection</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "Here's where the attack begins. We see multiple failed login attempts from Romania, trying to use a username very similar to our legitimate employee. This is classic reconnaissance behavior."
+    </div>
+</div>
+
+<h3>Phase 3: The Compromise (5 minutes)</h3>
+<div class="demo-script">
+"The attacker eventually succeeded in compromising our AWS root credentials."
+</div>
+
+<div class="alert-box alert-critical">
+    <h4>3. Successful Compromise</h4>
+    <p><strong>Alert:</strong> <code>AWS.CloudTrail.RootAccountUsage</code> or <code>AWS.CloudTrail.SuspiciousConsoleLogin</code></p>
+    <p><strong>Purpose:</strong> Show the moment of compromise</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>Successful login from attacker IP (92.55.146.245)</li>
+            <li>Root account usage (high privilege)</li>
+            <li>Geographic anomaly (Romania vs San Francisco)</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "This is the critical moment - the attacker successfully logged into our AWS root account from Romania. Notice the geographic anomaly and the use of root credentials."
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<h3>Phase 4: Privilege Escalation & Persistence (7 minutes)</h3>
+<div class="demo-script">
+"Once inside, the attacker immediately began establishing persistence and escalating privileges."
+</div>
+
+<div class="alert-box alert-critical">
+    <h4>4. Privilege Escalation</h4>
+    <p><strong>Alert:</strong> <code>AWS.CloudTrail.PrivilegeEscalation</code> or <code>AWS.CloudTrail.SuspiciousAPI</code></p>
+    <p><strong>Purpose:</strong> Show attacker establishing persistence</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>Creating new IAM user (tracy_stone)</li>
+            <li>Attaching multiple high-privilege policies</li>
+            <li>Creating access keys for persistence</li>
+            <li>Attempting to stop CloudTrail logging</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "The attacker immediately began privilege escalation. They created a new IAM user, attached multiple high-privilege policies including EC2, S3, and IAM full access, and created access keys for persistent access. They also tried to stop CloudTrail logging to hide their tracks."
+    </div>
+</div>
+
+<h3>Phase 5: Infrastructure Abuse (5 minutes)</h3>
+<div class="demo-script">
+"The attacker then spun up infrastructure to support their attack."
+</div>
+
+<div class="alert-box alert-high">
+    <h4>5. Resource Creation</h4>
+    <p><strong>Alert:</strong> <code>AWS.CloudTrail.UnusualServiceUsage</code> or <code>AWS.CloudTrail.EC2InstanceCreation</code></p>
+    <p><strong>Purpose:</strong> Show attacker creating attack infrastructure</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>Launching expensive EC2 instances (p2.8xlarge)</li>
+            <li>Using compromised access keys</li>
+            <li>Establishing attack infrastructure</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "The attacker launched expensive EC2 instances using the compromised credentials. This shows they're establishing infrastructure for their attack operations."
+    </div>
+</div>
+
+<h3>Phase 6: Data Exfiltration (5 minutes)</h3>
+<div class="demo-script">
+"Now let's see the data theft in action."
+</div>
+
+<div class="alert-box alert-critical">
+    <h4>6. Data Exfiltration</h4>
+    <p><strong>Alert:</strong> <code>AWS.S3ServerAccess.LargeDataDownload</code> or <code>AWS.S3ServerAccess.SuspiciousAccessPattern</code></p>
+    <p><strong>Purpose:</strong> Show data theft</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>Accessing customer data bucket (acme.customerdata-prod)</li>
+            <li>Downloading multiple PDF files (id-01.pdf, id-02.pdf, id-03.pdf)</li>
+            <li>Large data transfers</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "Here's the data exfiltration. The attacker accessed our customer data bucket and downloaded multiple PDF files containing sensitive customer information. This represents the actual data theft."
+    </div>
+</div>
+
+<h3>Phase 7: Network Activity & C2 (5 minutes)</h3>
+<div class="demo-script">
+"Finally, let's see the network communication and command & control activity."
+</div>
+
+<div class="alert-box alert-critical">
+    <h4>7. Command & Control Communication</h4>
+    <p><strong>Alert:</strong> <code>AWS.VPCFlow.SuspiciousOutboundTraffic</code> or <code>AWS.VPCFlow.C2Communication</code></p>
+    <p><strong>Purpose:</strong> Show C2 and data exfiltration over network</p>
+    
+    <div class="key-points">
+        <h4>Key Points:</h4>
+        <ul>
+            <li>SSH connections to external IP (92.55.146.245:22)</li>
+            <li>Large data transfers to external IPs</li>
+            <li>S3 data transfer patterns</li>
+            <li>Network-based evidence of compromise</li>
+        </ul>
+    </div>
+    
+    <div class="demo-script">
+        "The network logs show the complete picture. We see SSH connections to the attacker's command & control server, large data transfers, and the network evidence of data exfiltration. This completes the attack chain."
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<h2>🎭 Complete Attack Story Narrative</h2>
+<div class="timeline">
+    <div class="timeline-item">
+        <strong>1. Reconnaissance (Sept 10-11):</strong> Attacker attempts multiple failed logins from Romania
+    </div>
+    <div class="timeline-item">
+        <strong>2. Compromise (Sept 15):</strong> Attacker successfully logs into AWS root account
+    </div>
+    <div class="timeline-item">
+        <strong>3. Privilege Escalation (Sept 15):</strong> Creates persistent access and high-privilege user
+    </div>
+    <div class="timeline-item">
+        <strong>4. Infrastructure Abuse (Sept 15):</strong> Launches expensive EC2 instances for attack operations
+    </div>
+    <div class="timeline-item">
+        <strong>5. Data Exfiltration (Sept 15):</strong> Downloads customer data from S3 buckets
+    </div>
+    <div class="timeline-item">
+        <strong>6. C2 Communication (Sept 15):</strong> Establishes command & control and transfers stolen data
+    </div>
+</div>
+
+<h2>📊 Demo Timing & Flow</h2>
+<table>
+    <tr>
+        <th>Phase</th>
+        <th>Duration</th>
+        <th>Key Message</th>
+        <th>Customer Takeaway</th>
+    </tr>
+    <tr>
+        <td><strong>Context</strong></td>
+        <td>5 min</td>
+        <td>Normal baseline activity</td>
+        <td>Panther establishes baselines</td>
+    </tr>
+    <tr>
+        <td><strong>Reconnaissance</strong></td>
+        <td>3 min</td>
+        <td>Early threat detection</td>
+        <td>Panther detects reconnaissance</td>
+    </tr>
+    <tr>
+        <td><strong>Compromise</strong></td>
+        <td>5 min</td>
+        <td>Critical security event</td>
+        <td>Panther alerts on compromise</td>
+    </tr>
+    <tr>
+        <td><strong>Privilege Escalation</strong></td>
+        <td>7 min</td>
+        <td>Attack progression</td>
+        <td>Panther tracks attack evolution</td>
+    </tr>
+    <tr>
+        <td><strong>Infrastructure Abuse</strong></td>
+        <td>5 min</td>
+        <td>Resource abuse detection</td>
+        <td>Panther detects resource misuse</td>
+    </tr>
+    <tr>
+        <td><strong>Data Exfiltration</strong></td>
+        <td>5 min</td>
+        <td>Data theft evidence</td>
+        <td>Panther shows data loss</td>
+    </tr>
+    <tr>
+        <td><strong>Network Activity</strong></td>
+        <td>5 min</td>
+        <td>Complete attack picture</td>
+        <td>Panther provides full context</td>
+    </tr>
+</table>
+
+<p><strong>Total Demo Time:</strong> ~35 minutes</p>
+
+<h2>🎯 Key Demo Messages</h2>
+
+<div class="alert-box">
+    <h4>1. Comprehensive Coverage</h4>
+    <div class="demo-script">
+        "Panther detected this attack across multiple data sources - Okta, CloudTrail, S3, and VPC Flow logs - providing complete visibility."
+    </div>
+</div>
+
+<div class="alert-box">
+    <h4>2. Timeline Correlation</h4>
+    <div class="demo-script">
+        "Notice how Panther correlated events across the 5-day timeline, showing the complete attack progression from reconnaissance to data exfiltration."
+    </div>
+</div>
+
+<div class="alert-box">
+    <h4>3. Real-time Detection</h4>
+    <div class="demo-script">
+        "Each of these alerts fired in real-time as the attack unfolded, allowing for immediate response."
+    </div>
+</div>
+
+<div class="alert-box">
+    <h4>4. Cross-Service Correlation</h4>
+    <div class="demo-script">
+        "Panther automatically correlated the Okta reconnaissance with the AWS compromise and subsequent activities."
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<h2>🔧 Technical Setup Notes</h2>
+
+<h3>Prerequisites</h3>
+<ul>
+    <li>All test data sent to Panther with September 2025 timestamps</li>
+    <li>Okta logs via webhook</li>
+    <li>AWS logs via S3 buckets</li>
+    <li>Proper log source configuration</li>
+</ul>
+
+<h3>Alert Configuration</h3>
+<ul>
+    <li>Ensure all relevant Panther rules are enabled</li>
+    <li>Verify alert severity levels (Critical/High for key events)</li>
+    <li>Check alert correlation settings</li>
+</ul>
+
+<h3>Demo Environment</h3>
+<ul>
+    <li>Use Panther's alert timeline view</li>
+    <li>Show alert details and raw log data</li>
+    <li>Demonstrate alert investigation workflow</li>
+</ul>
+
+<h2>📝 Post-Demo Discussion Points</h2>
+
+<h3>Response Capabilities</h3>
+<ul>
+    <li>How would you respond to each alert?</li>
+    <li>What automated responses could be configured?</li>
+    <li>How would you investigate further?</li>
+</ul>
+
+<h3>Prevention Measures</h3>
+<ul>
+    <li>What controls could prevent this attack?</li>
+    <li>How would MFA have helped?</li>
+    <li>What monitoring improvements are needed?</li>
+</ul>
+
+<h3>Business Impact</h3>
+<ul>
+    <li>What's the business impact of this attack?</li>
+    <li>How much data was potentially compromised?</li>
+    <li>What are the compliance implications?</li>
+</ul>
+
+<div class="timeline" style="text-align: center; margin-top: 40px;">
+    <p><em>This guide provides a structured approach to demonstrating Panther's capabilities using the compromised root credentials attack scenario. The recommended order tells a compelling story while showcasing Panther's comprehensive detection and correlation capabilities.</em></p>
+</div>
+
+</body>
+</html>

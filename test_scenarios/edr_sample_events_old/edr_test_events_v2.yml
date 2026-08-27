@@ -1,0 +1,427 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EDR UDM Test Events v2 — corrected schemas for all 4 vendors
+#
+# Schema structures per vendor:
+#   CrowdStrike.EventStreams  → metadata: {} + event: {}  (nested)
+#   MicrosoftDefenderXDR     → time/tenantId/category + properties: {} (nested)
+#   CarbonBlack.EndpointEvent → flat, requires action + device_timestamp
+#   SentinelOne.DeepVisibilityV2 → flat, requires event.time + account.id
+#
+# ⚠️  NOTE: CrowdStrike HTTP source is EventStreams format.
+#     Your UDM detections list Crowdstrike.FDREvent — add Crowdstrike.EventStreams
+#     to LogTypes in those detections for CrowdStrike alerts to fire.
+# ─────────────────────────────────────────────────────────────────────────────
+
+events:
+
+  # ══════════════════════════════════════════════════════
+  # EDR.UDM.Base64.Encoded.Cmdline — MALICIOUS
+  # ══════════════════════════════════════════════════════
+
+  - id: b64_cs_enc_flag
+    description: "CrowdStrike — PowerShell -EncodedCommand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134400000
+        version: "1.0"
+        offset: 1
+      event:
+        FileName: powershell.exe
+        CommandLine: "powershell.exe -EncodedCommand SGVsbG8gV29ybGQ="
+        UserName: BEAZLEY\jsmith
+        ComputerName: BWKSTN-042
+        ProcessId: "7456"
+        ParentProcessId: "3104"
+        UTCTimestamp: 1716134400
+        SHA256String: a3f1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2
+
+  - id: b64_s1_enc
+    description: "SentinelOne — PowerShell -encodedcommand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "account.id": beazley-s1-account-01
+      "event.time": "2025-05-19T15:00:00.000Z"
+      eventType: ProcessCreation
+      "src.process.name": powershell.exe
+      "src.process.image.path": C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+      "src.process.cmdline": "powershell.exe -encodedcommand UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAALQBzACAAMQA="
+      "src.process.user": BEAZLEY\jsmith
+      "endpoint.name": BWKSTN-088
+      "agent.uuid": s1-agent-beazley-088
+
+  - id: b64_cb_frombase64
+    description: "CarbonBlack — FromBase64String pattern (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      action: ACTION_CREATE_PROCESS
+      device_timestamp: "2025-05-19T15:00:01.000Z"
+      process_name: powershell.exe
+      process_cmdline: "powershell.exe -c [System.Convert]::FromBase64String('aQBmACgAMQApAHsAZQB4AGkAdAB9AA==')"
+      process_username: BEAZLEY\itadmin
+      device_name: BSRV-DC01
+      org_key: BEAZLEY-CB-ORG
+      device_id: "7245001"
+      device_os: WINDOWS
+      schema: 1
+
+  - id: b64_def_encoded
+    description: "Defender XDR — wscript with EncodedCommand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      time: "2025-05-19T15:00:02.000Z"
+      tenantId: beazley-tenant-001
+      category: AdvancedHunting-DeviceProcessEvents
+      properties:
+        ActionType: ProcessCreated
+        FileName: wscript.exe
+        ProcessCommandLine: "wscript.exe //b //nologo /e:vbscript /EncodedCommand cABvAHcAZQByAHMAaABlAGwAbAA="
+        AccountName: jsmith
+        DeviceName: BWKSTN-099
+        SHA256: c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4
+
+  - id: b64_cs_enc_short
+    description: "CrowdStrike — PowerShell -enc shorthand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134460000
+        version: "1.0"
+        offset: 2
+      event:
+        FileName: powershell.exe
+        CommandLine: "powershell -enc aQBmACgAMQAgAC0AZQBxACAAMQApAHsAZQB4AGkAdAB9AA=="
+        UserName: BEAZLEY\analyst1
+        ComputerName: BWKSTN-017
+        ProcessId: "8801"
+        UTCTimestamp: 1716134460
+
+  # ══════════════════════════════════════════════════════
+  # EDR.UDM.Base64.Encoded.Cmdline — BENIGN
+  # ══════════════════════════════════════════════════════
+
+  - id: b64_cs_benign_normal_ps
+    description: "CrowdStrike — Normal PowerShell (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134500000
+        version: "1.0"
+        offset: 3
+      event:
+        FileName: powershell.exe
+        CommandLine: "powershell.exe -NonInteractive Get-Process"
+        UserName: BEAZLEY\svc_monitor
+        ComputerName: BWKSTN-042
+        UTCTimestamp: 1716134500
+
+  - id: b64_s1_benign_cmd
+    description: "SentinelOne — Normal cmd.exe execution (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "account.id": beazley-s1-account-01
+      "event.time": "2025-05-19T15:01:00.000Z"
+      eventType: ProcessCreation
+      "src.process.name": cmd.exe
+      "src.process.cmdline": "cmd.exe /c dir C:\\Users"
+      "src.process.user": BEAZLEY\helpdesk
+      "endpoint.name": BWKSTN-012
+      "agent.uuid": s1-agent-beazley-012
+
+  - id: b64_def_benign_script
+    description: "Defender XDR — PowerShell scheduled task (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      time: "2025-05-19T15:01:01.000Z"
+      tenantId: beazley-tenant-001
+      category: AdvancedHunting-DeviceProcessEvents
+      properties:
+        ActionType: ProcessCreated
+        FileName: powershell.exe
+        ProcessCommandLine: "powershell.exe -File C:\\Scripts\\Cleanup-Logs.ps1"
+        AccountName: svc_backup
+        DeviceName: BSRV-APP01
+
+  # ══════════════════════════════════════════════════════
+  # EDR.UDM.Credential.Dumping.Tool — MALICIOUS
+  # ══════════════════════════════════════════════════════
+
+  - id: cred_cs_mimikatz
+    description: "CrowdStrike — mimikatz.exe sekurlsa (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134600000
+        version: "1.0"
+        offset: 4
+      event:
+        FileName: mimikatz.exe
+        CommandLine: "mimikatz.exe sekurlsa::logonpasswords exit"
+        UserName: BEAZLEY\jsmith
+        ComputerName: BWKSTN-042
+        ProcessId: "9001"
+        SHA256String: d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5
+        UTCTimestamp: 1716134600
+
+  - id: cred_s1_mimikatz
+    description: "SentinelOne — mimikatz.exe (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "account.id": beazley-s1-account-01
+      "event.time": "2025-05-19T15:02:00.000Z"
+      eventType: ProcessCreation
+      "src.process.name": mimikatz.exe
+      "src.process.image.path": C:\Users\Public\mimikatz.exe
+      "src.process.cmdline": "mimikatz.exe privilege::debug sekurlsa::logonpasswords"
+      "src.process.user": BEAZLEY\contractor01
+      "endpoint.name": BWKSTN-055
+      "src.process.image.sha256": e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6
+      "agent.uuid": s1-agent-beazley-055
+
+  - id: cred_cb_lazagne
+    description: "CarbonBlack — LaZagne credential harvester (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      action: ACTION_CREATE_PROCESS
+      device_timestamp: "2025-05-19T15:02:01.000Z"
+      process_name: lazagne.exe
+      process_cmdline: "lazagne.exe all"
+      process_username: BEAZLEY\jsmith
+      device_name: BWKSTN-042
+      org_key: BEAZLEY-CB-ORG
+      device_id: "7245001"
+      device_os: WINDOWS
+      schema: 1
+
+  - id: cred_def_pypykatz
+    description: "Defender XDR — pypykatz LSASS dump (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      time: "2025-05-19T15:02:02.000Z"
+      tenantId: beazley-tenant-001
+      category: AdvancedHunting-DeviceProcessEvents
+      properties:
+        ActionType: ProcessCreated
+        FileName: pypykatz.exe
+        ProcessCommandLine: "pypykatz lsa minidump lsass.dmp"
+        AccountName: jsmith
+        DeviceName: BWKSTN-042
+        SHA256: f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7
+
+  - id: cred_cs_kerbrute
+    description: "CrowdStrike — kerbrute password spray (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134700000
+        version: "1.0"
+        offset: 5
+      event:
+        FileName: kerbrute.exe
+        CommandLine: "kerbrute.exe passwordspray --dc dc01.beazley.local users.txt Password1!"
+        UserName: BEAZLEY\guest
+        ComputerName: BWKSTN-019
+        UTCTimestamp: 1716134700
+
+  - id: cred_s1_lsass_cmdline
+    description: "SentinelOne — LSASS memory dump via comsvcs (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "account.id": beazley-s1-account-01
+      "event.time": "2025-05-19T15:02:30.000Z"
+      eventType: ProcessCreation
+      "src.process.name": rundll32.exe
+      "src.process.cmdline": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll MiniDump 624 C:\\Temp\\lsass.dmp full"
+      "src.process.user": BEAZLEY\jsmith
+      "endpoint.name": BSRV-DC01
+      "agent.uuid": s1-agent-beazley-dc01
+
+  # ══════════════════════════════════════════════════════
+  # Credential Dumping — BENIGN
+  # ══════════════════════════════════════════════════════
+
+  - id: cred_cs_benign_procmon
+    description: "CrowdStrike — Sysinternals Process Monitor (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134800000
+        version: "1.0"
+        offset: 6
+      event:
+        FileName: procmon.exe
+        CommandLine: "procmon.exe /AcceptEula /Quiet /Backingfile C:\\Logs\\procmon.pml"
+        UserName: BEAZLEY\sysadmin
+        ComputerName: BWKSTN-099
+        UTCTimestamp: 1716134800
+
+  - id: cred_cb_benign_it_tool
+    description: "CarbonBlack — IT password reset tool (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      action: ACTION_CREATE_PROCESS
+      device_timestamp: "2025-05-19T15:03:00.000Z"
+      process_name: pwreset.exe
+      process_cmdline: "pwreset.exe --user jsmith --reset"
+      process_username: BEAZLEY\it_helpdesk
+      device_name: BSRV-MGMT01
+      org_key: BEAZLEY-CB-ORG
+      device_id: "7245002"
+      device_os: WINDOWS
+      schema: 1
+
+  # ══════════════════════════════════════════════════════
+  # BENIGN BASELINE — Normal everyday process events
+  # ══════════════════════════════════════════════════════
+
+  - id: benign_cs_chrome
+    description: "CrowdStrike — Chrome browser launch (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.EventStreams
+      metadata:
+        customerIDString: BEAZLEY-CS-CID-001
+        eventType: DetectionSummaryEvent
+        eventCreationTime: 1716134900000
+        version: "1.0"
+        offset: 7
+      event:
+        FileName: chrome.exe
+        CommandLine: "chrome.exe --no-sandbox --disable-gpu"
+        UserName: BEAZLEY\analyst2
+        ComputerName: BWKSTN-031
+        UTCTimestamp: 1716134900
+
+  - id: benign_s1_winupdate
+    description: "SentinelOne — Windows Update service (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "account.id": beazley-s1-account-01
+      "event.time": "2025-05-19T15:04:00.000Z"
+      eventType: ProcessCreation
+      "src.process.name": wuauclt.exe
+      "src.process.cmdline": "wuauclt.exe /UpdateDeploymentProvider"
+      "src.process.user": NT AUTHORITY\SYSTEM
+      "endpoint.name": BWKSTN-042
+      "agent.uuid": s1-agent-beazley-042
+
+  - id: benign_cb_office
+    description: "CarbonBlack — Microsoft Word document opened (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      action: ACTION_CREATE_PROCESS
+      device_timestamp: "2025-05-19T15:04:01.000Z"
+      process_name: WINWORD.EXE
+      process_cmdline: "WINWORD.EXE /n C:\\Users\\jsmith\\Documents\\Q2_Report.docx"
+      process_username: BEAZLEY\jsmith
+      device_name: BWKSTN-042
+      org_key: BEAZLEY-CB-ORG
+      device_id: "7245001"
+      device_os: WINDOWS
+      schema: 1
+
+  - id: benign_def_defender_scan
+    description: "Defender XDR — Windows Defender scan (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      time: "2025-05-19T15:04:02.000Z"
+      tenantId: beazley-tenant-001
+      category: AdvancedHunting-DeviceProcessEvents
+      properties:
+        ActionType: ProcessCreated
+        FileName: MpCmdRun.exe
+        ProcessCommandLine: "MpCmdRun.exe -Scan -ScanType 1"
+        AccountName: SYSTEM
+        DeviceName: BWKSTN-077
+
+  - id: benign_s1_python_script
+    description: "SentinelOne — Python script by SOC analyst (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "account.id": beazley-s1-account-01
+      "event.time": "2025-05-19T15:04:30.000Z"
+      eventType: ProcessCreation
+      "src.process.name": python.exe
+      "src.process.cmdline": "python.exe C:\\SOC\\scripts\\parse_iocs.py --input iocs.csv"
+      "src.process.user": BEAZLEY\soc_analyst1
+      "endpoint.name": BSOC-WKSTN-01
+      "agent.uuid": s1-agent-beazley-soc01
+
+  - id: benign_cb_robocopy
+    description: "CarbonBlack — Windows scheduled backup (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      action: ACTION_CREATE_PROCESS
+      device_timestamp: "2025-05-19T15:05:00.000Z"
+      process_name: robocopy.exe
+      process_cmdline: "robocopy.exe C:\\Data \\\\BSRV-BACKUP\\share /MIR /LOG:backup.log"
+      process_username: NT AUTHORITY\SYSTEM
+      device_name: BSRV-FILE01
+      org_key: BEAZLEY-CB-ORG
+      device_id: "7245003"
+      device_os: WINDOWS
+      schema: 1
+
+  - id: benign_def_git
+    description: "Defender XDR — Git commit by developer (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      time: "2025-05-19T15:05:01.000Z"
+      tenantId: beazley-tenant-001
+      category: AdvancedHunting-DeviceProcessEvents
+      properties:
+        ActionType: ProcessCreated
+        FileName: git.exe
+        ProcessCommandLine: "git.exe commit -m 'fix: update detection logic'"
+        AccountName: dev_cwalker
+        DeviceName: BWKSTN-DEV01

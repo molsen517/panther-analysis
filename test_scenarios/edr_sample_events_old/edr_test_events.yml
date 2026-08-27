@@ -1,0 +1,294 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EDR UDM Test Events
+# Used with send_edr_events.py to trigger (or not) Panther detections
+#
+# Fields per event:
+#   id               - unique identifier
+#   description      - human-readable label shown in script output
+#   malicious        - true = should trigger a detection, false = benign baseline
+#   expected_detection - RuleID of the detection that should fire (malicious only)
+#   event            - raw log payload sent to Panther HTTP source
+#               NOTE: p_log_type tells the script which HTTP source to route to
+# ─────────────────────────────────────────────────────────────────────────────
+
+events:
+
+  # ══════════════════════════════════════════════════════
+  # EDR.UDM.Base64.Encoded.Cmdline
+  # ══════════════════════════════════════════════════════
+
+  - id: b64_cs_enc_flag
+    description: "CrowdStrike — PowerShell -EncodedCommand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: powershell.exe
+      ImageFileName: \Device\HarddiskVolume2\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+      CommandLine: "powershell.exe -EncodedCommand SGVsbG8gV29ybGQ="
+      UserName: BEAZLEY\jsmith
+      ComputerName: BWKSTN-042
+      SHA256HashData: a3f1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2
+
+  - id: b64_cs_enc_short
+    description: "CrowdStrike — PowerShell -enc shorthand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: powershell.exe
+      CommandLine: "powershell -enc aQBmACgAMQAgAC0AZQBxACAAMQApAHsAZQB4AGkAdAB9AA=="
+      UserName: BEAZLEY\analyst1
+      ComputerName: BWKSTN-017
+
+  - id: b64_s1_enc
+    description: "SentinelOne — PowerShell -encodedcommand (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "src.process.name": powershell.exe
+      "src.process.image.path": C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+      "src.process.cmdline": "powershell.exe -encodedcommand UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAALQBzACAAMQAwAA=="
+      "src.process.user": BEAZLEY\jsmith
+      "endpoint.name": BWKSTN-088
+      "src.process.image.sha256": b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3
+
+  - id: b64_cb_frombase64
+    description: "CarbonBlack — FromBase64String pattern (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      process_name: powershell.exe
+      process_cmdline: "powershell.exe -c [System.Convert]::FromBase64String('aQBmACgAMQApAHsAZQB4AGkAdAB9AA==')"
+      process_username: BEAZLEY\itadmin
+      device_name: BSRV-DC01
+
+  - id: b64_def_encoded
+    description: "Defender XDR — cmd /c with base64 wscript (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Base64.Encoded.Cmdline
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      ActionType: ProcessCreated
+      FileName: wscript.exe
+      ProcessCommandLine: "wscript.exe //b //nologo /e:vbscript /EncodedCommand cABvAHcAZQByAHMAaABlAGwAbAA="
+      AccountName: jsmith
+      DeviceName: BWKSTN-099
+      SHA256: c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4
+
+  - id: b64_cs_benign_normal_ps
+    description: "CrowdStrike — Normal PowerShell (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: powershell.exe
+      CommandLine: "powershell.exe -NonInteractive Get-Process"
+      UserName: BEAZLEY\svc_monitor
+      ComputerName: BWKSTN-042
+
+  - id: b64_s1_benign_cmd
+    description: "SentinelOne — Normal cmd.exe execution (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "src.process.name": cmd.exe
+      "src.process.cmdline": "cmd.exe /c dir C:\\Users"
+      "src.process.user": BEAZLEY\helpdesk
+      "endpoint.name": BWKSTN-012
+
+  - id: b64_def_benign_script
+    description: "Defender XDR — PowerShell scheduled task (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      ActionType: ProcessCreated
+      FileName: powershell.exe
+      ProcessCommandLine: "powershell.exe -File C:\\Scripts\\Cleanup-Logs.ps1"
+      AccountName: svc_backup
+      DeviceName: BSRV-APP01
+
+  # ══════════════════════════════════════════════════════
+  # EDR.UDM.Credential.Dumping.Tool
+  # ══════════════════════════════════════════════════════
+
+  - id: cred_cs_mimikatz
+    description: "CrowdStrike — mimikatz.exe sekurlsa (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: mimikatz.exe
+      ImageFileName: \Device\HarddiskVolume2\Windows\Temp\mimikatz.exe
+      CommandLine: "mimikatz.exe sekurlsa::logonpasswords exit"
+      UserName: BEAZLEY\jsmith
+      ComputerName: BWKSTN-042
+      SHA256HashData: d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5
+
+  - id: cred_s1_mimikatz
+    description: "SentinelOne — mimikatz.exe (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "src.process.name": mimikatz.exe
+      "src.process.image.path": C:\Users\Public\mimikatz.exe
+      "src.process.cmdline": "mimikatz.exe privilege::debug sekurlsa::logonpasswords"
+      "src.process.user": BEAZLEY\contractor01
+      "endpoint.name": BWKSTN-055
+      "src.process.image.sha256": e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6
+
+  - id: cred_cb_lazagne
+    description: "CarbonBlack — LaZagne credential harvester (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      process_name: lazagne.exe
+      process_cmdline: "lazagne.exe all"
+      process_username: BEAZLEY\jsmith
+      device_name: BWKSTN-042
+
+  - id: cred_def_pypykatz
+    description: "Defender XDR — pypykatz LSASS dump (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      ActionType: ProcessCreated
+      FileName: pypykatz.exe
+      ProcessCommandLine: "pypykatz lsa minidump lsass.dmp"
+      AccountName: jsmith
+      DeviceName: BWKSTN-042
+      SHA256: f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7
+
+  - id: cred_cs_kerbrute
+    description: "CrowdStrike — kerbrute password spray (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: kerbrute.exe
+      CommandLine: "kerbrute.exe passwordspray --dc dc01.beazley.local users.txt Password1!"
+      UserName: BEAZLEY\guest
+      ComputerName: BWKSTN-019
+
+  - id: cred_s1_lsass_cmdline
+    description: "SentinelOne — LSASS memory dump via comsvcs (should fire)"
+    malicious: true
+    expected_detection: EDR.UDM.Credential.Dumping.Tool
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "src.process.name": rundll32.exe
+      "src.process.cmdline": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll MiniDump 624 C:\\Temp\\lsass.dmp full"
+      "src.process.user": BEAZLEY\jsmith
+      "endpoint.name": BSRV-DC01
+
+  - id: cred_cs_benign_legit_tool
+    description: "CrowdStrike — Sysinternals Process Monitor (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: procmon.exe
+      CommandLine: "procmon.exe /AcceptEula /Quiet /Backingfile C:\\Logs\\procmon.pml"
+      UserName: BEAZLEY\sysadmin
+      ComputerName: BWKSTN-099
+
+  - id: cred_cb_benign_it_tool
+    description: "CarbonBlack — Legitimate IT admin password reset tool (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      process_name: pwreset.exe
+      process_cmdline: "pwreset.exe --user jsmith --reset"
+      process_username: BEAZLEY\it_helpdesk
+      device_name: BSRV-MGMT01
+
+  # ══════════════════════════════════════════════════════
+  # BENIGN BASELINE — Normal everyday process events
+  # ══════════════════════════════════════════════════════
+
+  - id: benign_cs_chrome
+    description: "CrowdStrike — Chrome browser launch (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: chrome.exe
+      CommandLine: "chrome.exe --no-sandbox --disable-gpu"
+      UserName: BEAZLEY\analyst2
+      ComputerName: BWKSTN-031
+
+  - id: benign_s1_winupdate
+    description: "SentinelOne — Windows Update service (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "src.process.name": wuauclt.exe
+      "src.process.cmdline": "wuauclt.exe /UpdateDeploymentProvider"
+      "src.process.user": NT AUTHORITY\SYSTEM
+      "endpoint.name": BWKSTN-042
+
+  - id: benign_cb_office
+    description: "CarbonBlack — Microsoft Word document opened (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      process_name: WINWORD.EXE
+      process_cmdline: "WINWORD.EXE /n C:\\Users\\jsmith\\Documents\\Q2_Report.docx"
+      process_username: BEAZLEY\jsmith
+      device_name: BWKSTN-042
+
+  - id: benign_def_defender_scan
+    description: "Defender XDR — Windows Defender scan (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: MicrosoftDefenderXDR.AdvancedHunting
+      ActionType: ProcessCreated
+      FileName: MpCmdRun.exe
+      ProcessCommandLine: "MpCmdRun.exe -Scan -ScanType 1"
+      AccountName: SYSTEM
+      DeviceName: BWKSTN-077
+
+  - id: benign_cs_git
+    description: "CrowdStrike — Git commit by developer (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: Crowdstrike.FDREvent
+      event_simpleName: ProcessRollup2
+      FileName: git.exe
+      CommandLine: "git.exe commit -m 'fix: update detection logic'"
+      UserName: BEAZLEY\dev_cwalker
+      ComputerName: BWKSTN-DEV01
+
+  - id: benign_s1_python_script
+    description: "SentinelOne — Python script execution by SOC analyst (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: SentinelOne.DeepVisibilityV2
+      "src.process.name": python.exe
+      "src.process.cmdline": "python.exe C:\\SOC\\scripts\\parse_iocs.py --input iocs.csv"
+      "src.process.user": BEAZLEY\soc_analyst1
+      "endpoint.name": BSOC-WKSTN-01
+
+  - id: benign_cb_scheduled_task
+    description: "CarbonBlack — Windows scheduled backup task (should NOT fire)"
+    malicious: false
+    event:
+      p_log_type: CarbonBlack.EndpointEvent
+      type: endpoint.event.procstart
+      process_name: robocopy.exe
+      process_cmdline: "robocopy.exe C:\\Data \\\\BSRV-BACKUP\\share /MIR /LOG:backup.log"
+      process_username: NT AUTHORITY\SYSTEM
+      device_name: BSRV-FILE01
